@@ -4,8 +4,8 @@ VendorFlow AI is a two-developer portfolio project for secure vendor onboarding,
 document-field review, and explainable human-led application decisions. The MVP
 uses FastAPI, PostgreSQL, React, TypeScript, Vite, and Tailwind CSS.
 
-This repository currently contains the Phase 0 runnable baseline: a typed backend
-health endpoint, a frontend screen that calls it, PostgreSQL/Alembic wiring, and
+The current implementation includes the runnable baseline plus vendor-only
+registration, login, current-user authentication, protected React routes, and
 the shared verified-vendor snapshot contract used by later review features.
 
 ## Prerequisites
@@ -14,8 +14,8 @@ the shared verified-vendor snapshot contract used by later review features.
 - Node.js 20.19 or newer and npm
 - PostgreSQL 15 or newer (needed when database-backed features begin)
 
-The health endpoint does not query PostgreSQL, so the Phase 0 smoke test works
-before a local database is created.
+The health endpoint does not query PostgreSQL, but authentication and its tests
+require the development and isolated test databases described below.
 
 ## First-time setup (Windows PowerShell)
 
@@ -80,6 +80,7 @@ development role and database (PostgreSQL will ask for the `postgres` password):
 ```powershell
 psql -U postgres -c "CREATE ROLE vendorflow WITH LOGIN PASSWORD 'vendorflow';"
 psql -U postgres -c "CREATE DATABASE vendorflow OWNER vendorflow;"
+psql -U postgres -c "CREATE DATABASE vendorflow_test OWNER vendorflow;"
 ```
 
 If `psql` is not found, open **SQL Shell (psql)** from the Start menu or add your
@@ -95,9 +96,20 @@ Set-Location backend
 ..\.venv\Scripts\python.exe -m alembic upgrade head
 ```
 
-The `0001_bootstrap` revision deliberately creates no tables. Phase 1 will add
-the first owned identity/vendor schema as the next revision, preserving a single
-migration history for both developers.
+`0001_bootstrap` establishes the migration history and `0002_create_users`
+creates the identity table. Developer 2 must add later migrations sequentially
+after this branch is merged.
+
+Generate a new JWT secret for `.env` instead of using the development fallback:
+
+```powershell
+[Convert]::ToHexString(
+  [Security.Cryptography.RandomNumberGenerator]::GetBytes(32)
+).ToLower()
+```
+
+Set that output as `JWT_SECRET_KEY`. Access tokens expire after
+`ACCESS_TOKEN_EXPIRE_MINUTES` (30 by default).
 
 For macOS/Linux, create and activate the environment with
 `python3 -m venv .venv` and `source .venv/bin/activate`; all remaining Python,
@@ -111,11 +123,36 @@ Developer 2. A fictional, test-only example lives at
 whose `review_status` is `confirmed` or `corrected` is exposed by the
 `verified_value` property; unreviewed OCR text remains untrusted.
 
+## Authentication
+
+Public registration accepts only `email`, `full_name`, and `password`; unknown
+fields such as `role` are rejected. Every public account is assigned the
+`vendor` role on the server. API examples are in `docs/API_CONTRACTS.md`.
+
+The browser keeps the short-lived access token only in React memory. It is not
+written to `localStorage`, `sessionStorage`, URLs, or logs, reducing persistence
+if injected JavaScript runs. This MVP therefore signs the user out on a full page
+refresh. A future production session design should use a Secure, HttpOnly,
+SameSite cookie with CSRF protection and token rotation.
+
+Create a local admin only after migrations have run. The command is disabled
+outside `development`/`test` and prompts securely so the password is not placed
+in shell history or process arguments:
+
+```powershell
+Set-Location backend
+..\.venv\Scripts\python.exe -m app.scripts.seed_admin `
+  --email admin@example.com `
+  --full-name "Local Review Admin"
+```
+
+There is intentionally no public admin-registration endpoint.
+
 Do not commit `.env`, credentials, real business records, or uploaded documents.
 
 ## Git workflow
 
-Bootstrap work lives on `feat/bootstrap`. After review, push the branch, open a
-pull request into `main`, and merge it before either developer creates dependent
-feature branches. Keep later feature work in separately reviewed branches.
+Keep feature work in separately reviewed branches. Authentication work lives on
+`feat/vendor-auth` and must merge before Developer 2 consumes its shared user and
+authorization dependencies.
 

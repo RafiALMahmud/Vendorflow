@@ -1,5 +1,12 @@
 import { useEffect, useState } from "react";
+import { BrowserRouter, Link, Navigate, Route, Routes } from "react-router-dom";
 
+import { AuthProvider } from "./features/auth/AuthProvider";
+import { DashboardPage } from "./features/auth/DashboardPage";
+import { LoginPage } from "./features/auth/LoginPage";
+import { ProtectedRoute } from "./features/auth/ProtectedRoute";
+import { RegisterPage } from "./features/auth/RegisterPage";
+import { useAuth } from "./features/auth/useAuth";
 import { getHealth, type HealthResponse } from "./shared/api";
 
 type HealthState =
@@ -7,25 +14,23 @@ type HealthState =
   | { kind: "online"; data: HealthResponse }
   | { kind: "offline" };
 
-function App() {
+function HomePage() {
   const [health, setHealth] = useState<HealthState>({ kind: "loading" });
 
   useEffect(() => {
     const controller = new AbortController();
-
     getHealth(controller.signal)
       .then((data) => setHealth({ kind: "online", data }))
       .catch((error: unknown) => {
         if (error instanceof DOMException && error.name === "AbortError") return;
         setHealth({ kind: "offline" });
       });
-
     return () => controller.abort();
   }, []);
 
   return (
-    <main className="min-h-screen bg-slate-950 px-6 py-16 text-slate-100">
-      <section className="mx-auto max-w-4xl overflow-hidden rounded-3xl border border-slate-800 bg-slate-900 shadow-2xl">
+    <main className="mx-auto max-w-5xl px-6 py-16">
+      <section className="overflow-hidden rounded-3xl border border-slate-800 bg-slate-900 shadow-2xl">
         <div className="grid gap-10 p-8 md:grid-cols-[1.4fr_1fr] md:p-12">
           <div>
             <p className="mb-4 text-sm font-semibold uppercase tracking-[0.25em] text-cyan-400">
@@ -38,8 +43,15 @@ function App() {
               A secure workspace for collecting vendor documents, reviewing
               extracted fields, and making transparent human decisions.
             </p>
+            <div className="mt-8 flex gap-3">
+              <Link className="primary-button" to="/register">
+                Create vendor account
+              </Link>
+              <Link className="secondary-button" to="/login">
+                Sign in
+              </Link>
+            </div>
           </div>
-
           <aside className="rounded-2xl bg-slate-800/70 p-6" aria-live="polite">
             <p className="text-sm font-medium text-slate-400">API connection</p>
             {health.kind === "loading" && (
@@ -69,6 +81,75 @@ function App() {
         </div>
       </section>
     </main>
+  );
+}
+
+function Navigation() {
+  const { user, logout } = useAuth();
+
+  return (
+    <header className="border-b border-slate-800 bg-slate-950/90">
+      <nav
+        className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4"
+        aria-label="Primary navigation"
+      >
+        <Link className="font-bold tracking-tight" to="/">
+          VendorFlow AI
+        </Link>
+        <div className="flex items-center gap-4 text-sm">
+          {user ? (
+            <>
+              <Link className="text-slate-300 hover:text-white" to="/dashboard">
+                Dashboard
+              </Link>
+              <button
+                className="text-slate-300 hover:text-white"
+                onClick={logout}
+                type="button"
+              >
+                Log out
+              </button>
+            </>
+          ) : (
+            <>
+              <Link className="text-slate-300 hover:text-white" to="/login">
+                Sign in
+              </Link>
+              <Link className="text-cyan-300 hover:text-cyan-200" to="/register">
+                Register
+              </Link>
+            </>
+          )}
+        </div>
+      </nav>
+    </header>
+  );
+}
+
+export function AppRoutes() {
+  return (
+    <div className="min-h-screen bg-slate-950 text-slate-100">
+      <Navigation />
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+        <Route element={<ProtectedRoute />}>
+          <Route path="/dashboard" element={<DashboardPage />} />
+        </Route>
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <BrowserRouter>
+      <AuthProvider>
+        <AppRoutes />
+      </AuthProvider>
+    </BrowserRouter>
   );
 }
 
