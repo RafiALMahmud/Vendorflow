@@ -205,7 +205,8 @@ Successful response: `201 Created`
   "original_filename": "fictional-license.pdf",
   "mime_type": "application/pdf",
   "file_size": 1842,
-  "processing_status": "uploaded",
+  "processing_status": "processed",
+  "processing_error": null,
   "created_at": "2026-10-17T09:00:00Z",
   "updated_at": "2026-10-17T09:00:00Z"
 }
@@ -215,6 +216,9 @@ The response never exposes the private `storage_key`. The backend requires a
 vendor profile, streams up to `DOCUMENT_MAX_FILE_SIZE_BYTES`, rejects path-like
 filenames, validates the extension, declared MIME type, magic bytes, and actual
 PDF/image structure, and stores a generated filename outside public directories.
+Extraction then follows `uploaded` -> `processing` -> `processed` or `failed`.
+A failure keeps the private upload and returns sanitized retry guidance in
+`processing_error`; it never fabricates extracted fields.
 
 Relevant errors use the normal `{ "detail": "..." }` envelope:
 
@@ -255,3 +259,34 @@ filename based on the safe original filename. Authorization is checked through
 the vendor-owned database query before the private storage path is resolved.
 Another vendor receives `404 Document not found`; a missing stored file returns
 `404 Document file not found`.
+
+## Read extracted fields
+
+`GET /api/v1/documents/{document_id}/extracted-fields`
+
+Successful response: `200 OK`
+
+```json
+[
+  {
+    "id": "40000000-0000-4000-8000-000000000001",
+    "document_id": "30000000-0000-4000-8000-000000000001",
+    "field_name": "expiry_date",
+    "raw_value": "17 October 2027",
+    "normalized_value": "2027-10-17",
+    "confirmed_value": null,
+    "review_status": "unreviewed",
+    "extraction_method": "pdf_text",
+    "review_note": null,
+    "created_at": "2026-10-17T09:00:01Z",
+    "updated_at": "2026-10-17T09:00:01Z"
+  }
+]
+```
+
+`extraction_method` is `pdf_text` when PyMuPDF found selectable text and
+`tesseract_ocr` only when the local executable actually returned text. Ambiguous
+or invalid dates have `normalized_value=null` and a human-readable `review_note`.
+All candidates remain `unreviewed` with `confirmed_value=null`; this endpoint
+does not verify OCR output. Ownership is enforced through the authenticated
+vendor database query used for private file access.

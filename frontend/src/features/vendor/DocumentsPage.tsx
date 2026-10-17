@@ -168,6 +168,11 @@ export function DocumentsPage() {
                     {documentTypeLabels[document.document_type]} · {readableSize(document.file_size)} ·{" "}
                     <span className="capitalize">{document.processing_status}</span>
                   </p>
+                  {document.processing_error && (
+                    <p className="mt-2 max-w-2xl text-sm text-amber-300">
+                      {document.processing_error}
+                    </p>
+                  )}
                 </div>
                 <button
                   className="secondary-button text-sm"

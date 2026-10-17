@@ -10,15 +10,16 @@ from sqlalchemy.orm import Session
 from app.core.auth import require_vendor
 from app.core.config import get_settings
 from app.db.session import get_db
-from app.models.documents import Document, DocumentType, ProcessingStatus
+from app.models.documents import Document, DocumentType, ExtractedField, ProcessingStatus
 from app.models.identity import User, Vendor
-from app.schemas.document import DocumentResponse
+from app.schemas.document import DocumentResponse, ExtractedFieldResponse
 from app.services.document_storage import (
     UploadValidationError,
     delete_stored_file,
     resolve_storage_path,
     store_validated_upload,
 )
+from app.services.extraction import extracted_fields_for_document, process_document
 
 router = APIRouter(prefix="/documents", tags=["documents"])
 VendorUser = Annotated[User, Depends(require_vendor)]
@@ -88,6 +89,7 @@ async def upload_document(
             detail="Unable to save document metadata",
         ) from None
     db.refresh(document)
+    document = process_document(document.id, db, settings)
     return document
 
 
@@ -110,6 +112,19 @@ def read_document(
     db: Database,
 ) -> Document:
     return get_owned_document(document_id, current_user, db)
+
+
+@router.get(
+    "/{document_id}/extracted-fields",
+    response_model=list[ExtractedFieldResponse],
+)
+def read_extracted_fields(
+    document_id: UUID,
+    current_user: VendorUser,
+    db: Database,
+) -> list[ExtractedField]:
+    document = get_owned_document(document_id, current_user, db)
+    return extracted_fields_for_document(document.id, db)
 
 
 @router.get("/{document_id}/file", response_class=FileResponse)

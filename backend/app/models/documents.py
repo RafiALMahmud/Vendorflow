@@ -89,6 +89,7 @@ class Document(Base):
         default=ProcessingStatus.UPLOADED,
         nullable=False,
     )
+    processing_error: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
@@ -123,6 +124,7 @@ class ExtractedField(Base):
     )
     field_name: Mapped[str] = mapped_column(String(100), nullable=False)
     raw_value: Mapped[str | None] = mapped_column(Text, nullable=True)
+    normalized_value: Mapped[str | None] = mapped_column(Text, nullable=True)
     confirmed_value: Mapped[str | None] = mapped_column(Text, nullable=True)
     review_status: Mapped[ReviewStatus] = mapped_column(
         SqlEnum(
@@ -137,6 +139,7 @@ class ExtractedField(Base):
         nullable=False,
     )
     extraction_method: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    review_note: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

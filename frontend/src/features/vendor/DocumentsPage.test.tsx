@@ -22,6 +22,7 @@ const document: VendorDocument = {
   mime_type: "application/pdf",
   file_size: 128,
   processing_status: "uploaded",
+  processing_error: null,
   created_at: "2026-10-17T00:00:00Z",
   updated_at: "2026-10-17T00:00:00Z",
 };
