@@ -298,7 +298,9 @@ def process_document(
         db.commit()
     except Exception:
         db.rollback()
-        logger.exception("Unexpected extraction failure for document %s", document_id)
+        # Do not attach arbitrary exception text or tracebacks here. Parser/OCR
+        # exceptions may contain document-derived text or local storage details.
+        logger.error("Unexpected extraction failure for document %s", document_id)
         document = db.get(Document, document_id)
         if document is None:
             raise

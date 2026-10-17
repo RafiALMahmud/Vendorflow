@@ -1,0 +1,60 @@
+{
+  "documents": [
+    {
+      "name": "alpha_trade_license",
+      "filename": "alpha-trade-license.pdf",
+      "mime_type": "application/pdf",
+      "requires_ocr": false,
+      "expected": {
+        "company_name": "Alpha Fictional Imports Ltd",
+        "registration_number": "REG-ALPHA-1001",
+        "license_number": "LIC-ALPHA-2001",
+        "issue_date": "2026-10-17",
+        "expiry_date": "2027-10-16",
+        "tax_identifier": "TAX-ALPHA-3001"
+      }
+    },
+    {
+      "name": "beta_business_registration",
+      "filename": "beta-business-registration.pdf",
+      "mime_type": "application/pdf",
+      "requires_ocr": false,
+      "expected": {
+        "company_name": "Beta Imaginary Services PLC",
+        "registration_number": "REG-BETA-1002",
+        "license_number": "LIC-BETA-2002",
+        "issue_date": "2026-11-05",
+        "expiry_date": "2028-11-05",
+        "tax_identifier": "TAX-BETA-3002"
+      }
+    },
+    {
+      "name": "gamma_tax_scan",
+      "filename": "gamma-tax-certificate.png",
+      "mime_type": "image/png",
+      "requires_ocr": true,
+      "expected": {
+        "company_name": "Gamma Fictional Foods Ltd",
+        "registration_number": "REG-GAMMA-1003",
+        "license_number": "LIC-GAMMA-2003",
+        "issue_date": "2026-12-01",
+        "expiry_date": "2029-12-01",
+        "tax_identifier": "TAX-GAMMA-3003"
+      }
+    },
+    {
+      "name": "delta_license_scan",
+      "filename": "delta-license-scan.pdf",
+      "mime_type": "application/pdf",
+      "requires_ocr": true,
+      "expected": {
+        "company_name": "Delta Imaginary Textiles Ltd",
+        "registration_number": "REG-DELTA-1004",
+        "license_number": "LIC-DELTA-2004",
+        "issue_date": "2026-12-02",
+        "expiry_date": "2029-12-02",
+        "tax_identifier": "TAX-DELTA-3004"
+      }
+    }
+  ]
+}
