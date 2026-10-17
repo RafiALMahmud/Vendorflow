@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 import { useAuth } from "./useAuth";
 
 export function DashboardPage() {
@@ -20,8 +22,13 @@ export function DashboardPage() {
             <dd className="mt-1 capitalize text-slate-200">{user?.role}</dd>
           </div>
         </dl>
+        {user?.role === "vendor" && (
+          <Link className="primary-button mt-8" to="/profile">
+            Set up or edit company profile
+          </Link>
+        )}
         <button
-          className="mt-8 rounded-xl border border-slate-700 px-4 py-2 text-sm hover:border-slate-500"
+          className="ml-3 mt-8 rounded-xl border border-slate-700 px-4 py-2 text-sm hover:border-slate-500"
           onClick={logout}
           type="button"
         >

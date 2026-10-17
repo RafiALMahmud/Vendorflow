@@ -26,6 +26,21 @@ export type RegisterInput = {
   password: string;
 };
 
+export type VendorProfileInput = {
+  company_name: string;
+  registration_number: string;
+  contact_email: string;
+  phone: string;
+  address: string;
+};
+
+export type VendorProfile = VendorProfileInput & {
+  id: string;
+  owner_user_id: string;
+  created_at: string;
+  updated_at: string;
+};
+
 export class ApiError extends Error {
   constructor(
     public readonly status: number,
@@ -61,7 +76,22 @@ async function apiRequest<T>(path: string, options: ApiOptions = {}): Promise<T>
     let detail = "Request failed. Please try again.";
     try {
       const errorBody = (await response.json()) as { detail?: unknown };
-      if (typeof errorBody.detail === "string") detail = errorBody.detail;
+      if (typeof errorBody.detail === "string") {
+        detail = errorBody.detail;
+      } else if (Array.isArray(errorBody.detail)) {
+        const firstIssue = errorBody.detail[0] as
+          | { loc?: unknown; msg?: unknown }
+          | undefined;
+        if (firstIssue && typeof firstIssue.msg === "string") {
+          const location = Array.isArray(firstIssue.loc)
+            ? firstIssue.loc.at(-1)
+            : undefined;
+          detail =
+            typeof location === "string"
+              ? `${location.replaceAll("_", " ")}: ${firstIssue.msg}`
+              : firstIssue.msg;
+        }
+      }
     } catch {
       // Keep the safe generic message for non-JSON failures.
     }
@@ -91,5 +121,31 @@ export function loginVendor(email: string, password: string): Promise<LoginRespo
 
 export function getCurrentUser(token: string): Promise<AuthUser> {
   return apiRequest<AuthUser>("/auth/me", { token });
+}
+
+export function getVendorProfile(token: string): Promise<VendorProfile> {
+  return apiRequest<VendorProfile>("/vendors/me", { token });
+}
+
+export function createVendorProfile(
+  token: string,
+  payload: VendorProfileInput,
+): Promise<VendorProfile> {
+  return apiRequest<VendorProfile>("/vendors/me", {
+    method: "POST",
+    token,
+    body: payload,
+  });
+}
+
+export function updateVendorProfile(
+  token: string,
+  payload: VendorProfileInput,
+): Promise<VendorProfile> {
+  return apiRequest<VendorProfile>("/vendors/me", {
+    method: "PATCH",
+    token,
+    body: payload,
+  });
 }
 
