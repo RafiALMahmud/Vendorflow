@@ -274,16 +274,16 @@ The warning is the existing Starlette TestClient/httpx deprecation warning; it
 does not indicate a test failure. The final full-suite and frontend outputs are
 recorded below after executing these commands.
 
-Final observed command results:
+Final release-preparation results (2026-10-17):
 
 ```text
 backend> ..\.venv\Scripts\python.exe -m pytest
-78 passed, 1 warning in 6.52s
+80 passed, 1 warning in 6.63s
 
 frontend> npm test -- --run
 Test Files  8 passed (8)
 Tests      16 passed (16)
-Duration   1.94s
+Duration   2.11s
 
 frontend> npm run lint
 eslint .
@@ -293,9 +293,9 @@ frontend> npm run build
 tsc -b && vite build
 55 modules transformed
 dist/index.html                  0.48 kB | gzip: 0.30 kB
-dist/assets/index-DwcuYm14.css  18.94 kB | gzip: 4.47 kB
-dist/assets/index-BJ0Cs4H5.js  299.18 kB | gzip: 92.09 kB
-built in 2.04s
+dist/assets/index-Bbg0GTwX.css  20.02 kB | gzip: 4.52 kB
+dist/assets/index-4Q2u_w5j.js  299.18 kB | gzip: 92.09 kB
+built in 1.10s
 
 backend> ..\.venv\Scripts\python.exe -m compileall -q app scripts tests
 exit code 0
@@ -310,6 +310,18 @@ TESSERACT_NOT_FOUND: real OCR smoke test skipped
 There were no failing commands in the final run. The earlier absence of
 Tesseract is recorded as an evaluation failure category and a smoke-test
 limitation, not hidden or reported as OCR success.
+
+The release run added `tests/test_vendor_journey.py`. It passed as part of the
+80-test backend suite and performs a real PostgreSQL/API/PyMuPDF flow from
+registration through verified snapshot construction. A focused run of that
+test plus upload security produced `18 passed, 1 warning in 3.15s`. It also
+proves a second vendor cannot list, read metadata, download, read extracted
+fields, or edit the first vendor's document.
+
+The single warning remains the upstream Starlette TestClient/httpx deprecation
+warning. Python byte-compilation exited `0`, Alembic reported `No new upgrade
+operations detected`, ESLint exited `0`, and no real OCR smoke was run because
+`Get-Command tesseract` returned no executable.
 
 ## CI coordination and limitations
 
