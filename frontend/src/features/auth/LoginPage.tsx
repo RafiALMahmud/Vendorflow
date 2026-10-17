@@ -12,6 +12,11 @@ export function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const registered =
+    typeof location.state === "object" &&
+    location.state !== null &&
+    "registered" in location.state &&
+    location.state.registered === true;
 
   const destination =
     typeof location.state === "object" &&
@@ -42,6 +47,11 @@ export function LoginPage() {
   return (
     <AuthCard title="Welcome back" subtitle="Sign in to your vendor workspace.">
       <form className="space-y-5" onSubmit={handleSubmit}>
+        {registered && (
+          <p className="rounded-xl bg-emerald-950/60 px-4 py-3 text-sm text-emerald-200" role="status">
+            Account created successfully. Sign in to continue.
+          </p>
+        )}
         <FormField
           id="login-email"
           label="Email"

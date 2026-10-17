@@ -126,3 +126,31 @@ test("loads and edits an existing vendor profile", async () => {
   );
   expect(await screen.findByText("Profile saved successfully.")).toBeInTheDocument();
 });
+
+test("does not mistake a network failure for a missing profile", async () => {
+  const fetchMock = vi
+    .spyOn(globalThis, "fetch")
+    .mockRejectedValueOnce(new TypeError("offline"))
+    .mockResolvedValueOnce(
+      new Response(JSON.stringify(profile), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+
+  renderProfile();
+
+  expect(
+    await screen.findByRole("heading", { name: "Unable to load company profile" }),
+  ).toBeInTheDocument();
+  expect(screen.getByText(/Network error/)).toBeInTheDocument();
+  expect(
+    screen.queryByRole("heading", { name: "Set up company profile" }),
+  ).not.toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+  expect(
+    await screen.findByRole("heading", { name: "Edit company profile" }),
+  ).toBeInTheDocument();
+  expect(fetchMock).toHaveBeenCalledTimes(2);
+});

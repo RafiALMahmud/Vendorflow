@@ -104,6 +104,12 @@ export class ApiError extends Error {
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000/api/v1";
 
+export type UploadProgress = {
+  loaded: number;
+  total: number | null;
+  percent: number | null;
+};
+
 type ApiOptions = Omit<RequestInit, "body"> & {
   token?: string;
   body?: unknown;
@@ -246,14 +252,53 @@ export function uploadDocument(
   token: string,
   documentType: DocumentType,
   file: File,
+  onProgress?: (progress: UploadProgress) => void,
 ): Promise<VendorDocument> {
   const formData = new FormData();
   formData.set("document_type", documentType);
   formData.set("file", file);
-  return apiRequest<VendorDocument>("/documents/upload", {
-    method: "POST",
-    token,
-    formData,
+  return new Promise((resolve, reject) => {
+    const request = new XMLHttpRequest();
+    request.open("POST", `${API_BASE_URL}/documents/upload`);
+    request.setRequestHeader("Accept", "application/json");
+    request.setRequestHeader("Authorization", `Bearer ${token}`);
+    request.upload.addEventListener("progress", (event) => {
+      const total = event.lengthComputable ? event.total : null;
+      onProgress?.({
+        loaded: event.loaded,
+        total,
+        percent: total ? Math.round((event.loaded / total) * 100) : null,
+      });
+    });
+    request.addEventListener("load", () => {
+      let payload: unknown;
+      try {
+        payload = JSON.parse(request.responseText);
+      } catch {
+        reject(new ApiError(request.status, "The server returned an invalid response."));
+        return;
+      }
+      if (request.status >= 200 && request.status < 300) {
+        onProgress?.({ loaded: file.size, total: file.size, percent: 100 });
+        resolve(payload as VendorDocument);
+        return;
+      }
+      const detail =
+        typeof payload === "object" &&
+        payload !== null &&
+        "detail" in payload &&
+        typeof payload.detail === "string"
+          ? payload.detail
+          : "Unable to upload this document.";
+      reject(new ApiError(request.status, detail));
+    });
+    request.addEventListener("error", () => {
+      reject(new ApiError(0, "Network error. Check the backend connection and retry."));
+    });
+    request.addEventListener("abort", () => {
+      reject(new ApiError(0, "Document upload was cancelled."));
+    });
+    request.send(formData);
   });
 }
 
