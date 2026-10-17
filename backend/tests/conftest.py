@@ -1,4 +1,5 @@
 from collections.abc import Generator
+from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
@@ -10,13 +11,28 @@ from app.core.config import get_settings
 from app.db.base import Base
 from app.db.session import get_db
 from app.main import app
-from app.models import User  # noqa: F401 - registers tables in Base.metadata
+from app.models import (  # noqa: F401 - registers tables in Base.metadata
+    Document,
+    ExtractedField,
+    User,
+    Vendor,
+)
 
 test_database_url = get_settings().test_database_url
 if make_url(test_database_url).database != "vendorflow_test":
     raise RuntimeError("Tests refuse to run outside the vendorflow_test database")
 
 test_engine = create_engine(test_database_url, pool_pre_ping=True)
+
+
+@pytest.fixture(autouse=True)
+def isolate_document_storage(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> Path:
+    storage_dir = tmp_path / "private_uploads"
+    monkeypatch.setattr(get_settings(), "document_storage_dir", storage_dir)
+    return storage_dir
 
 
 @pytest.fixture(scope="session", autouse=True)

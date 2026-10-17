@@ -41,6 +41,26 @@ export type VendorProfile = VendorProfileInput & {
   updated_at: string;
 };
 
+export type DocumentType =
+  | "trade_license"
+  | "business_registration"
+  | "tax_certificate"
+  | "other";
+
+export type ProcessingStatus = "uploaded" | "processing" | "processed" | "failed";
+
+export type VendorDocument = {
+  id: string;
+  vendor_id: string;
+  document_type: DocumentType;
+  original_filename: string;
+  mime_type: string;
+  file_size: number;
+  processing_status: ProcessingStatus;
+  created_at: string;
+  updated_at: string;
+};
+
 export class ApiError extends Error {
   constructor(
     public readonly status: number,
@@ -56,10 +76,19 @@ const API_BASE_URL =
 type ApiOptions = Omit<RequestInit, "body"> & {
   token?: string;
   body?: unknown;
+  formData?: FormData;
+  responseType?: "json" | "blob";
 };
 
 async function apiRequest<T>(path: string, options: ApiOptions = {}): Promise<T> {
-  const { token, body, headers: suppliedHeaders, ...requestOptions } = options;
+  const {
+    token,
+    body,
+    formData,
+    responseType = "json",
+    headers: suppliedHeaders,
+    ...requestOptions
+  } = options;
   const headers = new Headers(suppliedHeaders);
 
   headers.set("Accept", "application/json");
@@ -69,7 +98,7 @@ async function apiRequest<T>(path: string, options: ApiOptions = {}): Promise<T>
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...requestOptions,
     headers,
-    body: body === undefined ? undefined : JSON.stringify(body),
+    body: formData ?? (body === undefined ? undefined : JSON.stringify(body)),
   });
 
   if (!response.ok) {
@@ -98,6 +127,7 @@ async function apiRequest<T>(path: string, options: ApiOptions = {}): Promise<T>
     throw new ApiError(response.status, detail);
   }
 
+  if (responseType === "blob") return response.blob() as Promise<T>;
   return response.json() as Promise<T>;
 }
 
@@ -146,6 +176,32 @@ export function updateVendorProfile(
     method: "PATCH",
     token,
     body: payload,
+  });
+}
+
+export function listDocuments(token: string): Promise<VendorDocument[]> {
+  return apiRequest<VendorDocument[]>("/documents", { token });
+}
+
+export function uploadDocument(
+  token: string,
+  documentType: DocumentType,
+  file: File,
+): Promise<VendorDocument> {
+  const formData = new FormData();
+  formData.set("document_type", documentType);
+  formData.set("file", file);
+  return apiRequest<VendorDocument>("/documents/upload", {
+    method: "POST",
+    token,
+    formData,
+  });
+}
+
+export function downloadDocument(token: string, documentId: string): Promise<Blob> {
+  return apiRequest<Blob>(`/documents/${documentId}/file`, {
+    token,
+    responseType: "blob",
   });
 }
 

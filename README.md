@@ -5,8 +5,9 @@ document-field review, and explainable human-led application decisions. The MVP
 uses FastAPI, PostgreSQL, React, TypeScript, Vite, and Tailwind CSS.
 
 The current implementation includes the runnable baseline, vendor-only
-authentication, vendor company-profile setup/editing, protected React routes,
-and the shared verified-vendor snapshot contract used by later review features.
+authentication, vendor company-profile setup/editing, secure private document
+uploads/downloads, protected React routes, and the shared verified-vendor
+snapshot contract used by later review features.
 
 ## Prerequisites
 
@@ -97,9 +98,10 @@ Set-Location backend
 ```
 
 `0001_bootstrap` establishes the migration history, `0002_create_users` creates
-the identity table, and `0003_create_vendors` creates the one-to-one company
-profile table. Developer 2 must add later migrations sequentially after these
-Developer 1 migrations are merged.
+the identity table, `0003_create_vendors` creates the one-to-one company profile
+table, and `0004_create_documents` creates document and future extracted-field
+tables. Developer 2 must add later migrations sequentially after these Developer
+1 migrations are merged; do not create a parallel migration head.
 
 Generate a new JWT secret for `.env` instead of using the development fallback:
 
@@ -160,11 +162,38 @@ The backend derives ownership only from the signed-in user. Clients cannot
 provide or change `owner_user_id`, and the database enforces one profile per
 user. Exact request and response examples are in `docs/API_CONTRACTS.md`.
 
+## Secure document uploads
+
+After creating a vendor profile, open `http://localhost:5173/documents` to upload
+or list the authenticated vendor's documents. Uploads use multipart form fields
+named `document_type` and `file`. OCR and field extraction are intentionally not
+part of this stage; new records start with `processing_status=uploaded`.
+
+Configuration in `.env`:
+
+```text
+DOCUMENT_STORAGE_DIR=private_uploads
+DOCUMENT_MAX_FILE_SIZE_BYTES=10485760
+```
+
+Relative storage paths resolve from the repository root. Use an absolute path
+for a deployment volume. The storage directory is ignored by Git and is never
+mounted as a public/static directory. The backend streams uploads with the byte
+limit, checks the filename, declared type, magic bytes, and real PDF/image
+structure, then stores the file under a generated UUID name. Supported files are
+PDF, JPG/JPEG, and PNG only.
+
+If metadata persistence fails, the newly stored file is removed. File downloads
+first query the document through the authenticated vendor's profile and return
+`404` for another vendor's document. Exact requests and responses are in
+`docs/API_CONTRACTS.md`.
+
 Do not commit `.env`, credentials, real business records, or uploaded documents.
 
 ## Git workflow
 
 Keep feature work in separately reviewed branches. Authentication work lives on
 `feat/vendor-auth`; vendor profile work lives on `feat/vendor-profile` and must
-follow it so the Alembic history stays sequential.
+follow it. Secure ingestion lives on `feat/document-upload` and supplies the
+`0004` migration that Developer 2 must follow so Alembic stays sequential.
 

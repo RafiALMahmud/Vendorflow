@@ -7,6 +7,7 @@ import { LoginPage } from "./features/auth/LoginPage";
 import { ProtectedRoute } from "./features/auth/ProtectedRoute";
 import { RegisterPage } from "./features/auth/RegisterPage";
 import { useAuth } from "./features/auth/useAuth";
+import { DocumentsPage } from "./features/vendor/DocumentsPage";
 import { VendorProfilePage } from "./features/vendor/VendorProfilePage";
 import { getHealth, type HealthResponse } from "./shared/api";
 
@@ -104,9 +105,14 @@ function Navigation() {
                 Dashboard
               </Link>
               {user.role === "vendor" && (
-                <Link className="text-slate-300 hover:text-white" to="/profile">
-                  Company profile
-                </Link>
+                <>
+                  <Link className="text-slate-300 hover:text-white" to="/profile">
+                    Company profile
+                  </Link>
+                  <Link className="text-slate-300 hover:text-white" to="/documents">
+                    Documents
+                  </Link>
+                </>
               )}
               <button
                 className="text-slate-300 hover:text-white"
@@ -143,6 +149,7 @@ export function AppRoutes() {
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/profile" element={<VendorProfilePage />} />
+          <Route path="/documents" element={<DocumentsPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

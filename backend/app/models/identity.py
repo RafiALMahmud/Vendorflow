@@ -1,5 +1,6 @@
 from datetime import datetime
 from enum import StrEnum
+from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
 
 from sqlalchemy import (
@@ -14,6 +15,9 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
+
+if TYPE_CHECKING:
+    from app.models.documents import Document
 
 
 class UserRole(StrEnum):
@@ -84,3 +88,7 @@ class Vendor(Base):
         nullable=False,
     )
     owner: Mapped[User] = relationship(back_populates="vendor_profile")
+    documents: Mapped[list["Document"]] = relationship(
+        back_populates="vendor",
+        cascade="all, delete-orphan",
+    )
