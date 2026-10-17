@@ -9,6 +9,17 @@ from fastapi.testclient import TestClient
 from PIL import Image
 
 from app.core.config import get_settings
+from app.models.documents import Document
+
+
+@pytest.fixture(autouse=True)
+def leave_uploads_unprocessed(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def no_op_processing(document_id, db, settings):
+        return db.get(Document, document_id)
+
+    monkeypatch.setattr("app.routers.documents.process_document", no_op_processing)
 
 
 def pdf_bytes() -> bytes:

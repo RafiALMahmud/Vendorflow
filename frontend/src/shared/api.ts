@@ -57,6 +57,7 @@ export type VendorDocument = {
   mime_type: string;
   file_size: number;
   processing_status: ProcessingStatus;
+  processing_error: string | null;
   created_at: string;
   updated_at: string;
 };

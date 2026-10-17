@@ -6,8 +6,8 @@ uses FastAPI, PostgreSQL, React, TypeScript, Vite, and Tailwind CSS.
 
 The current implementation includes the runnable baseline, vendor-only
 authentication, vendor company-profile setup/editing, secure private document
-uploads/downloads, protected React routes, and the shared verified-vendor
-snapshot contract used by later review features.
+uploads/downloads, local PDF text extraction and optional Tesseract OCR,
+protected React routes, and the shared verified-vendor snapshot contract.
 
 ## Prerequisites
 
@@ -99,9 +99,10 @@ Set-Location backend
 
 `0001_bootstrap` establishes the migration history, `0002_create_users` creates
 the identity table, `0003_create_vendors` creates the one-to-one company profile
-table, and `0004_create_documents` creates document and future extracted-field
-tables. Developer 2 must add later migrations sequentially after these Developer
-1 migrations are merged; do not create a parallel migration head.
+table, `0004_create_documents` creates document and extracted-field tables, and
+`0005_add_extraction_state` adds safe failure and normalization details.
+Developer 2 must add later migrations sequentially after these Developer 1
+migrations are merged; do not create a parallel migration head.
 
 Generate a new JWT secret for `.env` instead of using the development fallback:
 
@@ -166,8 +167,8 @@ user. Exact request and response examples are in `docs/API_CONTRACTS.md`.
 
 After creating a vendor profile, open `http://localhost:5173/documents` to upload
 or list the authenticated vendor's documents. Uploads use multipart form fields
-named `document_type` and `file`. OCR and field extraction are intentionally not
-part of this stage; new records start with `processing_status=uploaded`.
+named `document_type` and `file`. New records start as `uploaded`, transition
+through `processing`, and finish as `processed` or `failed`.
 
 Configuration in `.env`:
 
@@ -188,12 +189,19 @@ first query the document through the authenticated vendor's profile and return
 `404` for another vendor's document. Exact requests and responses are in
 `docs/API_CONTRACTS.md`.
 
+Digital PDFs use PyMuPDF selectable text without OCR. Image-only PDFs and image
+uploads use a locally installed Tesseract executable. Missing Tesseract is
+reported honestly as a failed OCR-required document; it does not prevent digital
+PDF processing. Installation, parsing, date ambiguity, and test instructions are
+in `docs/DOCUMENT_EXTRACTION.md`.
+
 Do not commit `.env`, credentials, real business records, or uploaded documents.
 
 ## Git workflow
 
 Keep feature work in separately reviewed branches. Authentication work lives on
 `feat/vendor-auth`; vendor profile work lives on `feat/vendor-profile` and must
-follow it. Secure ingestion lives on `feat/document-upload` and supplies the
-`0004` migration that Developer 2 must follow so Alembic stays sequential.
+follow it. Secure ingestion lives on `feat/document-upload`; document extraction
+follows on `feat/document-extraction` with migration `0005`. Developer 2 must
+branch after these revisions merge so Alembic stays sequential.
 
