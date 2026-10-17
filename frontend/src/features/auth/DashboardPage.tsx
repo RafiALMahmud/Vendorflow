@@ -23,12 +23,17 @@ export function DashboardPage() {
           </div>
         </dl>
         {user?.role === "vendor" && (
-          <Link className="primary-button mt-8" to="/profile">
-            Set up or edit company profile
-          </Link>
+          <div className="mt-8 flex flex-wrap gap-3">
+            <Link className="primary-button" to="/profile">
+              Set up or edit company profile
+            </Link>
+            <Link className="secondary-button" to="/documents">
+              Upload and view documents
+            </Link>
+          </div>
         )}
         <button
-          className="ml-3 mt-8 rounded-xl border border-slate-700 px-4 py-2 text-sm hover:border-slate-500"
+          className="mt-8 rounded-xl border border-slate-700 px-4 py-2 text-sm hover:border-slate-500"
           onClick={logout}
           type="button"
         >

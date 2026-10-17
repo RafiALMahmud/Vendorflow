@@ -1,4 +1,5 @@
 from functools import lru_cache
+from pathlib import Path
 from typing import Annotated, Literal
 
 from pydantic import Field, SecretStr, field_validator, model_validator
@@ -8,6 +9,7 @@ INSECURE_JWT_SECRETS = {
     "development-only-change-this-secret-before-deployment",
     "replace-with-at-least-32-random-characters",
 }
+DEFAULT_DOCUMENT_STORAGE_DIR = Path(__file__).resolve().parents[3] / "private_uploads"
 
 
 class Settings(BaseSettings):
@@ -27,6 +29,12 @@ class Settings(BaseSettings):
     )
     jwt_algorithm: Literal["HS256", "HS384", "HS512"] = "HS256"
     access_token_expire_minutes: int = Field(default=30, ge=5, le=1440)
+    document_storage_dir: Path = DEFAULT_DOCUMENT_STORAGE_DIR
+    document_max_file_size_bytes: int = Field(
+        default=10 * 1024 * 1024,
+        ge=1024,
+        le=50 * 1024 * 1024,
+    )
 
     model_config = SettingsConfigDict(
         env_file=("../.env", ".env"),
