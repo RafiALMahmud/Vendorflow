@@ -10,9 +10,19 @@ from sqlalchemy.orm import Session
 from app.core.auth import require_vendor
 from app.core.config import get_settings
 from app.db.session import get_db
-from app.models.documents import Document, DocumentType, ExtractedField, ProcessingStatus
+from app.models.documents import (
+    Document,
+    DocumentType,
+    ExtractedField,
+    ProcessingStatus,
+    ReviewStatus,
+)
 from app.models.identity import User, Vendor
-from app.schemas.document import DocumentResponse, ExtractedFieldResponse
+from app.schemas.document import (
+    DocumentResponse,
+    ExtractedFieldResponse,
+    ExtractedFieldsReviewRequest,
+)
 from app.services.document_storage import (
     UploadValidationError,
     delete_stored_file,
@@ -124,6 +134,82 @@ def read_extracted_fields(
     db: Database,
 ) -> list[ExtractedField]:
     document = get_owned_document(document_id, current_user, db)
+    return extracted_fields_for_document(document.id, db)
+
+
+@router.patch(
+    "/{document_id}/extracted-fields",
+    response_model=list[ExtractedFieldResponse],
+)
+def review_extracted_fields(
+    document_id: UUID,
+    payload: ExtractedFieldsReviewRequest,
+    current_user: VendorUser,
+    db: Database,
+) -> list[ExtractedField]:
+    document = get_owned_document(document_id, current_user, db)
+    extracted_fields = extracted_fields_for_document(document.id, db)
+    fields_by_name = {field.field_name: field for field in extracted_fields}
+    validated_updates: list[tuple[ExtractedField, str, ReviewStatus]] = []
+
+    # Validate the complete batch before changing ORM state so malformed requests
+    # cannot partially review a document.
+    for update in payload.fields:
+        field = fields_by_name.get(update.field_name)
+        if field is None:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                detail=f"Field '{update.field_name}' was not extracted for this document",
+            )
+
+        candidate_value = field.normalized_value or field.raw_value
+        if update.review_status == "confirmed":
+            if candidate_value is None:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                    detail=(
+                        f"Field '{update.field_name}' has no extracted value to confirm; "
+                        "submit a correction instead"
+                    ),
+                )
+            if update.confirmed_value != candidate_value.strip():
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                    detail=(
+                        f"Confirmed value for '{update.field_name}' must match the "
+                        "extracted candidate; use corrected for a changed value"
+                    ),
+                )
+            review_status = ReviewStatus.CONFIRMED
+        else:
+            if (
+                candidate_value is not None
+                and update.confirmed_value == candidate_value.strip()
+            ):
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                    detail=(
+                        f"Corrected value for '{update.field_name}' must differ from the "
+                        "extracted candidate; use confirmed when it is correct"
+                    ),
+                )
+            review_status = ReviewStatus.CORRECTED
+
+        validated_updates.append((field, update.confirmed_value, review_status))
+
+    for field, confirmed_value, review_status in validated_updates:
+        field.confirmed_value = confirmed_value
+        field.review_status = review_status
+
+    try:
+        db.commit()
+    except SQLAlchemyError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unable to save extracted field reviews",
+        ) from None
+
     return extracted_fields_for_document(document.id, db)
 
 

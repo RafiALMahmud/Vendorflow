@@ -8,6 +8,7 @@ import { ProtectedRoute } from "./features/auth/ProtectedRoute";
 import { RegisterPage } from "./features/auth/RegisterPage";
 import { useAuth } from "./features/auth/useAuth";
 import { DocumentsPage } from "./features/vendor/DocumentsPage";
+import { ExtractionReviewPage } from "./features/vendor/ExtractionReviewPage";
 import { VendorProfilePage } from "./features/vendor/VendorProfilePage";
 import { getHealth, type HealthResponse } from "./shared/api";
 
@@ -150,6 +151,10 @@ export function AppRoutes() {
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/profile" element={<VendorProfilePage />} />
           <Route path="/documents" element={<DocumentsPage />} />
+          <Route
+            path="/documents/:documentId/review"
+            element={<ExtractionReviewPage />}
+          />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

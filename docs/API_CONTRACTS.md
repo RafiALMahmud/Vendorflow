@@ -290,3 +290,77 @@ or invalid dates have `normalized_value=null` and a human-readable `review_note`
 All candidates remain `unreviewed` with `confirmed_value=null`; this endpoint
 does not verify OCR output. Ownership is enforced through the authenticated
 vendor database query used for private file access.
+
+## Review extracted fields
+
+`PATCH /api/v1/documents/{document_id}/extracted-fields`
+
+This vendor-only endpoint records an explicit human decision for one or more
+existing extracted fields. A correct extracted candidate is submitted as
+`confirmed`; a changed or previously unreadable value is submitted as
+`corrected`. The server never promotes an OCR or parser guess automatically.
+
+```json
+{
+  "fields": [
+    {
+      "field_name": "company_name",
+      "confirmed_value": "Northstar Fictional Trading Ltd",
+      "review_status": "confirmed"
+    },
+    {
+      "field_name": "expiry_date",
+      "confirmed_value": "2028-10-17",
+      "review_status": "corrected"
+    }
+  ]
+}
+```
+
+Successful response: `200 OK`. The response is the complete, freshly saved
+field list in the same shape as `GET .../extracted-fields`:
+
+```json
+[
+  {
+    "id": "40000000-0000-4000-8000-000000000001",
+    "document_id": "30000000-0000-4000-8000-000000000001",
+    "field_name": "company_name",
+    "raw_value": "Northstar Fictional Trading Ltd",
+    "normalized_value": null,
+    "confirmed_value": "Northstar Fictional Trading Ltd",
+    "review_status": "confirmed",
+    "extraction_method": "pdf_text",
+    "review_note": null,
+    "created_at": "2026-10-17T09:00:01Z",
+    "updated_at": "2026-10-17T09:10:00Z"
+  },
+  {
+    "id": "40000000-0000-4000-8000-000000000002",
+    "document_id": "30000000-0000-4000-8000-000000000001",
+    "field_name": "expiry_date",
+    "raw_value": "17 October 2027",
+    "normalized_value": "2027-10-17",
+    "confirmed_value": "2028-10-17",
+    "review_status": "corrected",
+    "extraction_method": "pdf_text",
+    "review_note": null,
+    "created_at": "2026-10-17T09:00:01Z",
+    "updated_at": "2026-10-17T09:10:00Z"
+  }
+]
+```
+
+`raw_value`, `normalized_value`, and extraction provenance remain unchanged by
+review. Allowed field names are `company_name`, `registration_number`,
+`license_number`, `issue_date`, `expiry_date`, and `tax_identifier`. Date
+confirmations and corrections must be valid ISO `YYYY-MM-DD` dates. A
+`confirmed` value must match the extracted candidate (the normalized value when
+present, otherwise the raw value); a changed value must use `corrected`.
+
+The request must contain one to six unique fields and rejects blank/null values,
+unknown or non-extracted fields, unsupported statuses, extra properties, and
+malformed JSON with `422 Unprocessable Entity`. The entire batch is validated
+before any update is saved. Missing authentication returns `401`; another
+vendor's document returns the same `404 Document not found` response as an
+unknown document.

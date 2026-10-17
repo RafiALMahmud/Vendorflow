@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import { Link } from "react-router-dom";
 
 import {
   ApiError,
@@ -174,14 +175,24 @@ export function DocumentsPage() {
                     </p>
                   )}
                 </div>
-                <button
-                  className="secondary-button text-sm"
-                  disabled={downloadingId === document.id}
-                  type="button"
-                  onClick={() => handleDownload(document)}
-                >
-                  {downloadingId === document.id ? "Downloading…" : "Download"}
-                </button>
+                <div className="flex gap-3">
+                  {document.processing_status === "processed" && (
+                    <Link
+                      className="primary-button text-sm"
+                      to={`/documents/${document.id}/review`}
+                    >
+                      Review extraction
+                    </Link>
+                  )}
+                  <button
+                    className="secondary-button text-sm"
+                    disabled={downloadingId === document.id}
+                    type="button"
+                    onClick={() => handleDownload(document)}
+                  >
+                    {downloadingId === document.id ? "Downloading…" : "Download"}
+                  </button>
+                </div>
               </li>
             ))}
           </ul>

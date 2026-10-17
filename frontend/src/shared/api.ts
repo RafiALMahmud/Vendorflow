@@ -62,6 +62,36 @@ export type VendorDocument = {
   updated_at: string;
 };
 
+export type ExtractedFieldName =
+  | "company_name"
+  | "registration_number"
+  | "license_number"
+  | "issue_date"
+  | "expiry_date"
+  | "tax_identifier";
+
+export type ReviewStatus = "unreviewed" | "confirmed" | "corrected";
+
+export type ExtractedField = {
+  id: string;
+  document_id: string;
+  field_name: ExtractedFieldName;
+  raw_value: string | null;
+  normalized_value: string | null;
+  confirmed_value: string | null;
+  review_status: ReviewStatus;
+  extraction_method: string | null;
+  review_note: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type ExtractedFieldReviewUpdate = {
+  field_name: ExtractedFieldName;
+  confirmed_value: string;
+  review_status: "confirmed" | "corrected";
+};
+
 export class ApiError extends Error {
   constructor(
     public readonly status: number,
@@ -182,6 +212,34 @@ export function updateVendorProfile(
 
 export function listDocuments(token: string): Promise<VendorDocument[]> {
   return apiRequest<VendorDocument[]>("/documents", { token });
+}
+
+export function getDocument(
+  token: string,
+  documentId: string,
+): Promise<VendorDocument> {
+  return apiRequest<VendorDocument>(`/documents/${documentId}`, { token });
+}
+
+export function getExtractedFields(
+  token: string,
+  documentId: string,
+): Promise<ExtractedField[]> {
+  return apiRequest<ExtractedField[]>(
+    `/documents/${documentId}/extracted-fields`,
+    { token },
+  );
+}
+
+export function updateExtractedFields(
+  token: string,
+  documentId: string,
+  fields: ExtractedFieldReviewUpdate[],
+): Promise<ExtractedField[]> {
+  return apiRequest<ExtractedField[]>(
+    `/documents/${documentId}/extracted-fields`,
+    { method: "PATCH", token, body: { fields } },
+  );
 }
 
 export function uploadDocument(
