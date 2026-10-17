@@ -4,9 +4,9 @@ VendorFlow AI is a two-developer portfolio project for secure vendor onboarding,
 document-field review, and explainable human-led application decisions. The MVP
 uses FastAPI, PostgreSQL, React, TypeScript, Vite, and Tailwind CSS.
 
-The current implementation includes the runnable baseline plus vendor-only
-registration, login, current-user authentication, protected React routes, and
-the shared verified-vendor snapshot contract used by later review features.
+The current implementation includes the runnable baseline, vendor-only
+authentication, vendor company-profile setup/editing, protected React routes,
+and the shared verified-vendor snapshot contract used by later review features.
 
 ## Prerequisites
 
@@ -96,9 +96,10 @@ Set-Location backend
 ..\.venv\Scripts\python.exe -m alembic upgrade head
 ```
 
-`0001_bootstrap` establishes the migration history and `0002_create_users`
-creates the identity table. Developer 2 must add later migrations sequentially
-after this branch is merged.
+`0001_bootstrap` establishes the migration history, `0002_create_users` creates
+the identity table, and `0003_create_vendors` creates the one-to-one company
+profile table. Developer 2 must add later migrations sequentially after these
+Developer 1 migrations are merged.
 
 Generate a new JWT secret for `.env` instead of using the development fallback:
 
@@ -148,11 +149,22 @@ Set-Location backend
 
 There is intentionally no public admin-registration endpoint.
 
+## Vendor profile
+
+After signing in as a vendor, open `http://localhost:5173/profile`. A new account
+sees the setup form; an account with a profile sees the saved values and may edit
+them. The page calls the real `POST`, `GET`, and `PATCH /api/v1/vendors/me`
+endpoints and shows loading, success, validation, and API error states.
+
+The backend derives ownership only from the signed-in user. Clients cannot
+provide or change `owner_user_id`, and the database enforces one profile per
+user. Exact request and response examples are in `docs/API_CONTRACTS.md`.
+
 Do not commit `.env`, credentials, real business records, or uploaded documents.
 
 ## Git workflow
 
 Keep feature work in separately reviewed branches. Authentication work lives on
-`feat/vendor-auth` and must merge before Developer 2 consumes its shared user and
-authorization dependencies.
+`feat/vendor-auth`; vendor profile work lives on `feat/vendor-profile` and must
+follow it so the Alembic history stays sequential.
 

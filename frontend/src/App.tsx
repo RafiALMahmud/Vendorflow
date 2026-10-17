@@ -7,6 +7,7 @@ import { LoginPage } from "./features/auth/LoginPage";
 import { ProtectedRoute } from "./features/auth/ProtectedRoute";
 import { RegisterPage } from "./features/auth/RegisterPage";
 import { useAuth } from "./features/auth/useAuth";
+import { VendorProfilePage } from "./features/vendor/VendorProfilePage";
 import { getHealth, type HealthResponse } from "./shared/api";
 
 type HealthState =
@@ -102,6 +103,11 @@ function Navigation() {
               <Link className="text-slate-300 hover:text-white" to="/dashboard">
                 Dashboard
               </Link>
+              {user.role === "vendor" && (
+                <Link className="text-slate-300 hover:text-white" to="/profile">
+                  Company profile
+                </Link>
+              )}
               <button
                 className="text-slate-300 hover:text-white"
                 onClick={logout}
@@ -136,6 +142,7 @@ export function AppRoutes() {
         <Route path="/register" element={<RegisterPage />} />
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/profile" element={<VendorProfilePage />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
