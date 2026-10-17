@@ -18,7 +18,7 @@
           "review_status": "confirmed"
         },
         "expiry_date": {
-          "raw_value": "2026-12-31",
+          "raw_value": "31/12/2026",
           "confirmed_value": "2026-12-31",
           "review_status": "corrected"
         },

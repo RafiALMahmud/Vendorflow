@@ -364,3 +364,69 @@ malformed JSON with `422 Unprocessable Entity`. The entire batch is validated
 before any update is saved. Missing authentication returns `401`; another
 vendor's document returns the same `404 Document not found` response as an
 unknown document.
+
+## Verified vendor snapshot service contract
+
+Developer 2 services consume the typed snapshot builder directly; this is not
+an HTTP endpoint:
+
+```python
+def build_verified_vendor_snapshot(
+    vendor_id: UUID,
+    db: Session,
+) -> VerifiedVendorSnapshot:
+```
+
+The DTOs are exported from `app.contracts.verified_data`, and the builder and
+`VendorSnapshotNotFoundError` are defined in `app.services.document_access`.
+An unknown vendor raises `VendorSnapshotNotFoundError`; an existing vendor with
+no documents returns a valid snapshot with `"documents": []`.
+
+Exact fictional JSON fixture (`backend/tests/fixtures/verified_vendor_snapshot.json`):
+
+```json
+{
+  "vendor_id": "10000000-0000-4000-8000-000000000001",
+  "company_name": "Example Trading Ltd",
+  "documents": [
+    {
+      "document_id": "20000000-0000-4000-8000-000000000001",
+      "document_type": "trade_license",
+      "processing_status": "processed",
+      "fields": {
+        "company_name": {
+          "raw_value": "Example Trading Ltd",
+          "confirmed_value": "Example Trading Ltd",
+          "review_status": "confirmed"
+        },
+        "registration_number": {
+          "raw_value": "REG-001",
+          "confirmed_value": "REG-001",
+          "review_status": "confirmed"
+        },
+        "expiry_date": {
+          "raw_value": "31/12/2026",
+          "confirmed_value": "2026-12-31",
+          "review_status": "corrected"
+        },
+        "tax_identifier": {
+          "raw_value": "OCR-GUESS-123",
+          "confirmed_value": null,
+          "review_status": "unreviewed"
+        }
+      }
+    }
+  ]
+}
+```
+
+The builder includes only documents whose `vendor_id` matches the requested
+vendor. Documents are ordered by creation time and UUID, while fields are
+ordered by field name and UUID, making repeated serialization deterministic.
+Failed documents remain visible with `processing_status="failed"` and normally
+have an empty `fields` object.
+
+`raw_value` is evidence, not a trusted value. Consumers must read
+`VerifiedFieldSnapshot.verified_value`: it returns `confirmed_value` only for
+`confirmed` or `corrected` fields and returns `null` for `unreviewed` fields.
+The DTO also rejects a completed review state without a `confirmed_value`.
