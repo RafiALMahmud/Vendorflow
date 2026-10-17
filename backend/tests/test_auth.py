@@ -133,6 +133,54 @@ def test_invalid_token_is_rejected(client: TestClient) -> None:
     assert response.status_code == 401
 
 
+def test_token_signed_with_another_secret_is_rejected(client: TestClient) -> None:
+    user = register(client, "wrong-signature@example.com")
+    now = datetime.now(timezone.utc)
+    forged = jwt.encode(
+        {
+            "sub": f"user:{user['id']}",
+            "type": "access",
+            "iat": now,
+            "exp": now + timedelta(minutes=30),
+        },
+        "attacker-controlled-secret-that-is-long-enough",
+        algorithm=get_settings().jwt_algorithm,
+    )
+
+    response = client.get(
+        "/api/v1/auth/me",
+        headers={"Authorization": f"Bearer {forged}"},
+    )
+
+    assert response.status_code == 401
+    assert response.json() == {"detail": "Could not validate credentials"}
+
+
+def test_signed_role_claim_cannot_escalate_database_role(client: TestClient) -> None:
+    user = register(client, "role-claim@example.com")
+    settings = get_settings()
+    now = datetime.now(timezone.utc)
+    token = jwt.encode(
+        {
+            "sub": f"user:{user['id']}",
+            "type": "access",
+            "role": "admin",
+            "iat": now,
+            "exp": now + timedelta(minutes=30),
+        },
+        settings.jwt_secret_key.get_secret_value(),
+        algorithm=settings.jwt_algorithm,
+    )
+
+    response = client.get(
+        "/api/v1/auth/me",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["role"] == "vendor"
+
+
 def test_access_token_has_required_expiry_and_no_role_claim(client: TestClient) -> None:
     register(client)
     token = login(client)

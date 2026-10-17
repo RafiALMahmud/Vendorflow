@@ -1,4 +1,5 @@
 from pathlib import Path
+import logging
 
 import pytest
 from fastapi.testclient import TestClient
@@ -237,6 +238,37 @@ def test_processing_failure_sets_failed_status_and_retry_guidance(
     assert db_session.scalar(
         select(ExtractedField).where(ExtractedField.document_id == document.id)
     ) is None
+
+
+def test_unexpected_extraction_error_is_sanitized_in_database_and_logs(
+    db_session: Session,
+    isolate_document_storage: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    document = stored_document(
+        db_session,
+        isolate_document_storage,
+        filename="sensitive-failure.pdf",
+        content=synthetic_digital_pdf_bytes(),
+        mime_type="application/pdf",
+    )
+    sensitive_detail = "SECRET-DOCUMENT-CONTENT C:\\private\\upload.pdf"
+
+    def unexpected_failure(*args, **kwargs):
+        raise RuntimeError(sensitive_detail)
+
+    monkeypatch.setattr(extraction, "parse_fictional_document", unexpected_failure)
+    with caplog.at_level(logging.ERROR, logger="app.services.extraction"):
+        processed = process_document(document.id, db_session)
+
+    assert processed.processing_status is ProcessingStatus.FAILED
+    assert processed.processing_error == (
+        "Document processing failed safely. Re-upload the document or contact support."
+    )
+    assert sensitive_detail not in processed.processing_error
+    assert sensitive_detail not in caplog.text
+    assert str(isolate_document_storage) not in caplog.text
 
 
 def test_unreadable_document_reports_safe_failure(tmp_path: Path) -> None:
