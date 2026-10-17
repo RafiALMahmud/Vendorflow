@@ -54,6 +54,9 @@ def _validate_filename(upload: UploadFile) -> tuple[str, str]:
         or filename in {".", ".."}
         or "/" in filename
         or "\\" in filename
+        or any(
+            ord(character) < 32 or ord(character) == 127 for character in filename
+        )
     ):
         raise UploadValidationError(400, "Filename must be a plain file name")
 
@@ -86,6 +89,9 @@ def _detect_mime(path: Path) -> str | None:
 def _validate_file_structure(path: Path, mime_type: str) -> None:
     try:
         if mime_type == "application/pdf":
+            # PyMuPDF may retain a Windows handle when direct-opening a corrupt
+            # temporary file, which prevents reliable cleanup. The upload has
+            # already been capped by ``document_max_file_size_bytes``.
             with pymupdf.open(stream=path.read_bytes(), filetype="pdf") as document:
                 if document.needs_pass or document.page_count < 1:
                     raise ValueError("Unreadable PDF")

@@ -5,11 +5,14 @@ from uuid import uuid4
 
 import pymupdf
 import pytest
+from fastapi import UploadFile
 from fastapi.testclient import TestClient
+from starlette.datastructures import Headers
 from PIL import Image
 
 from app.core.config import get_settings
 from app.models.documents import Document
+from app.services.document_storage import UploadValidationError, _validate_filename
 
 
 @pytest.fixture(autouse=True)
@@ -238,6 +241,17 @@ def test_path_traversal_filename_is_rejected(
     assert response.json() == {"detail": "Filename must be a plain file name"}
     assert not isolate_document_storage.exists()
     assert not (tmp_path / "escape.pdf").exists()
+
+
+def test_control_characters_in_filename_are_rejected() -> None:
+    upload = UploadFile(
+        filename="unsafe\r\nname.pdf",
+        file=BytesIO(pdf_bytes()),
+        headers=Headers({"content-type": "application/pdf"}),
+    )
+
+    with pytest.raises(UploadValidationError, match="plain file name"):
+        _validate_filename(upload)
 
 
 def test_cross_vendor_document_access_is_hidden(client: TestClient) -> None:

@@ -430,3 +430,32 @@ have an empty `fields` object.
 `VerifiedFieldSnapshot.verified_value`: it returns `confirmed_value` only for
 `confirmed` or `corrected` fields and returns `null` for `unreviewed` fields.
 The DTO also rejects a completed review state without a `confirmed_value`.
+
+## Release integration status
+
+The current fetched repository does not contain Developer 2's application,
+risk, workflow, audit, or admin modules. Consequently, no application endpoint
+from the Developer 2 table in `PROJECT_SPEC.md` is documented here as working,
+and the vendor dashboard displays `Integration pending`. The verified snapshot
+service above is the implemented integration boundary.
+
+`backend/tests/test_vendor_journey.py` is the Developer 1 API-to-database golden
+path. It uses a generated fictional selectable-text trade license and performs:
+
+```text
+register -> login -> create profile -> edit profile -> upload
+-> extract -> GET raw fields -> PATCH confirmed/corrected fields
+-> GET persisted fields -> build_verified_vendor_snapshot
+```
+
+The same test logs in as a second vendor and verifies:
+
+- `GET /documents` returns only that vendor's documents;
+- metadata, file download, and extracted-field reads for the owner's document
+  return the ownership-safe `404 Document not found` response;
+- a cross-vendor extracted-field PATCH also returns the same `404` and does not
+  alter the owner's saved review.
+
+The snapshot assertion confirms that `confirmed` and `corrected` values expose a
+`verified_value`, while an intentionally `unreviewed` tax identifier remains in
+the evidence payload with `verified_value=None`.
