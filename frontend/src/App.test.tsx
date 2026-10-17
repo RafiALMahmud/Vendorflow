@@ -8,6 +8,7 @@ afterEach(() => {
 });
 
 test("shows the backend health result", async () => {
+  window.history.pushState({}, "", "/");
   vi.spyOn(globalThis, "fetch").mockResolvedValue(
     new Response(
       JSON.stringify({
@@ -21,7 +22,7 @@ test("shows the backend health result", async () => {
 
   render(<App />);
 
-  expect(screen.getByText("VendorFlow AI")).toBeInTheDocument();
+  expect(screen.getByRole("heading", { name: "VendorFlow AI" })).toBeInTheDocument();
   expect(await screen.findByText("Backend online")).toBeInTheDocument();
   expect(screen.getByText("VendorFlow AI · test")).toBeInTheDocument();
 });
