@@ -16,3 +16,13 @@ def test_health_endpoint() -> None:
         "environment": "development",
     }
 
+
+def test_health_endpoint_allows_configured_frontend_origin() -> None:
+    response = client.get(
+        "/api/v1/health",
+        headers={"Origin": "http://localhost:5173"},
+    )
+
+    assert response.status_code == 200
+    assert response.headers["access-control-allow-origin"] == "http://localhost:5173"
+
