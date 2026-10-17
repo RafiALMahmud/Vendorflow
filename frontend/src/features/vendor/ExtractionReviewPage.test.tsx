@@ -101,6 +101,9 @@ test("confirms a candidate and reloads the persisted review", async () => {
     await screen.findByText("Expiry date review saved and reloaded."),
   ).toBeInTheDocument();
   expect(screen.getByText("confirmed")).toBeInTheDocument();
+  expect(screen.getByText("Vendor-confirmed:").parentElement).toHaveTextContent(
+    "2027-10-17",
+  );
   await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(4));
 
   const patchRequest = fetchMock.mock.calls[2][1];
@@ -162,6 +165,9 @@ test("saves a correction and clearly displays unreadable values", async () => {
     await screen.findByText("Issue date review saved and reloaded."),
   ).toBeInTheDocument();
   expect(screen.getByText("corrected")).toBeInTheDocument();
+  expect(screen.getByText("Vendor-confirmed:").parentElement).toHaveTextContent(
+    "2026-10-17",
+  );
   const payload = JSON.parse(fetchMock.mock.calls[2][1]?.body as string);
   expect(payload.fields[0]).toEqual({
     field_name: "issue_date",

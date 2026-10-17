@@ -2,14 +2,16 @@ import { useEffect, useState } from "react";
 import { BrowserRouter, Link, Navigate, Route, Routes } from "react-router-dom";
 
 import { AuthProvider } from "./features/auth/AuthProvider";
-import { DashboardPage } from "./features/auth/DashboardPage";
 import { LoginPage } from "./features/auth/LoginPage";
 import { ProtectedRoute } from "./features/auth/ProtectedRoute";
 import { RegisterPage } from "./features/auth/RegisterPage";
 import { useAuth } from "./features/auth/useAuth";
 import { DocumentsPage } from "./features/vendor/DocumentsPage";
+import { DocumentDetailPage } from "./features/vendor/DocumentDetailPage";
 import { ExtractionReviewPage } from "./features/vendor/ExtractionReviewPage";
+import { VendorDashboardPage } from "./features/vendor/VendorDashboardPage";
 import { VendorProfilePage } from "./features/vendor/VendorProfilePage";
+import { VendorRoute } from "./features/vendor/VendorRoute";
 import { getHealth, type HealthResponse } from "./shared/api";
 
 type HealthState =
@@ -93,20 +95,20 @@ function Navigation() {
   return (
     <header className="border-b border-slate-800 bg-slate-950/90">
       <nav
-        className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4"
+        className="mx-auto flex max-w-5xl flex-col items-start justify-between gap-4 px-6 py-4 sm:flex-row sm:items-center"
         aria-label="Primary navigation"
       >
         <Link className="font-bold tracking-tight" to="/">
           VendorFlow AI
         </Link>
-        <div className="flex items-center gap-4 text-sm">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
           {user ? (
             <>
-              <Link className="text-slate-300 hover:text-white" to="/dashboard">
-                Dashboard
-              </Link>
               {user.role === "vendor" && (
                 <>
+                  <Link className="text-slate-300 hover:text-white" to="/dashboard">
+                    Dashboard
+                  </Link>
                   <Link className="text-slate-300 hover:text-white" to="/profile">
                     Company profile
                   </Link>
@@ -148,13 +150,16 @@ export function AppRoutes() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route element={<ProtectedRoute />}>
-          <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/profile" element={<VendorProfilePage />} />
-          <Route path="/documents" element={<DocumentsPage />} />
-          <Route
-            path="/documents/:documentId/review"
-            element={<ExtractionReviewPage />}
-          />
+          <Route element={<VendorRoute />}>
+            <Route path="/dashboard" element={<VendorDashboardPage />} />
+            <Route path="/profile" element={<VendorProfilePage />} />
+            <Route path="/documents" element={<DocumentsPage />} />
+            <Route path="/documents/:documentId" element={<DocumentDetailPage />} />
+            <Route
+              path="/documents/:documentId/review"
+              element={<ExtractionReviewPage />}
+            />
+          </Route>
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

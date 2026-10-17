@@ -49,6 +49,18 @@ test("logs in through the API, opens the protected page, and logs out", async ()
         }),
         { status: 200, headers: { "Content-Type": "application/json" } },
       ),
+    )
+    .mockResolvedValueOnce(
+      new Response(JSON.stringify({ detail: "Vendor profile not found" }), {
+        status: 404,
+        headers: { "Content-Type": "application/json" },
+      }),
+    )
+    .mockResolvedValueOnce(
+      new Response(JSON.stringify([]), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
     );
 
   renderAt("/login");
@@ -61,9 +73,9 @@ test("logs in through the API, opens the protected page, and logs out", async ()
   fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
 
   expect(
-    await screen.findByRole("heading", { name: "Hello, Fictional Vendor" }),
+    await screen.findByRole("heading", { name: "Welcome, Fictional Vendor" }),
   ).toBeInTheDocument();
-  expect(fetchMock).toHaveBeenCalledTimes(2);
+  expect(fetchMock).toHaveBeenCalledTimes(4);
   const meRequest = fetchMock.mock.calls[1];
   expect(meRequest[0]).toContain("/auth/me");
   expect((meRequest[1]?.headers as Headers).get("Authorization")).toBe(
@@ -101,6 +113,9 @@ test("registers a vendor through the API and returns to sign in", async () => {
   fireEvent.click(screen.getByRole("button", { name: "Create account" }));
 
   expect(await screen.findByRole("heading", { name: "Welcome back" })).toBeInTheDocument();
+  expect(
+    screen.getByText("Account created successfully. Sign in to continue."),
+  ).toBeInTheDocument();
   await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
   const requestBody = JSON.parse(String(fetchMock.mock.calls[0][1]?.body));
   expect(requestBody).toEqual({

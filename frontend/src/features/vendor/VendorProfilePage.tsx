@@ -18,7 +18,7 @@ const emptyProfile: VendorProfileInput = {
   address: "",
 };
 
-type PageState = "loading" | "create" | "edit";
+type PageState = "loading" | "create" | "edit" | "error";
 
 function errorMessage(error: unknown, fallback: string) {
   return error instanceof ApiError ? error.detail : fallback;
@@ -32,11 +32,15 @@ export function VendorProfilePage() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [forbidden, setForbidden] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     if (!token) return;
     const controller = new AbortController();
     setError(null);
+    setForbidden(false);
+    setPageState("loading");
     getVendorProfile(token)
       .then((profile) => {
         if (controller.signal.aborted) return;
@@ -56,11 +60,16 @@ export function VendorProfilePage() {
           setPageState("create");
           return;
         }
-        setError(errorMessage(caughtError, "Unable to load your vendor profile."));
-        setPageState("create");
+        setForbidden(caughtError instanceof ApiError && caughtError.status === 403);
+        setError(
+          caughtError instanceof ApiError
+            ? caughtError.detail
+            : "Network error. Check the backend connection and retry.",
+        );
+        setPageState("error");
       });
     return () => controller.abort();
-  }, [token]);
+  }, [reloadKey, token]);
 
   function updateField(field: keyof VendorProfileInput, value: string) {
     setForm((current) => ({ ...current, [field]: value }));
@@ -92,6 +101,29 @@ export function VendorProfilePage() {
     return (
       <main className="mx-auto max-w-3xl px-6 py-14" aria-live="polite">
         <p className="text-slate-300">Loading vendor profile…</p>
+      </main>
+    );
+  }
+
+  if (pageState === "error") {
+    return (
+      <main className="mx-auto max-w-3xl px-6 py-14">
+        <section className="rounded-3xl border border-rose-900/70 bg-slate-900 p-8">
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-rose-300">
+            {forbidden ? "Forbidden" : "Connection problem"}
+          </p>
+          <h1 className="mt-3 text-3xl font-bold">Unable to load company profile</h1>
+          <p className="mt-3 text-slate-300" role="alert">{error}</p>
+          {!forbidden && (
+            <button
+              className="primary-button mt-6"
+              type="button"
+              onClick={() => setReloadKey((key) => key + 1)}
+            >
+              Retry
+            </button>
+          )}
+        </section>
       </main>
     );
   }

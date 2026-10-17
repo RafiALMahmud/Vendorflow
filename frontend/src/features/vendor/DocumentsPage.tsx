@@ -10,21 +10,17 @@ import {
   type VendorDocument,
 } from "../../shared/api";
 import { useAuth } from "../auth/useAuth";
-
-const documentTypeLabels: Record<DocumentType, string> = {
-  trade_license: "Trade license",
-  business_registration: "Business registration",
-  tax_certificate: "Tax certificate",
-  other: "Other",
-};
-
-function readableSize(bytes: number) {
-  if (bytes < 1024) return `${bytes} B`;
-  return `${(bytes / 1024).toFixed(1)} KB`;
-}
+import {
+  documentTypeLabels,
+  processingStatusLabels,
+  readableSize,
+} from "./documentUi";
 
 function messageFrom(error: unknown, fallback: string) {
-  return error instanceof ApiError ? error.detail : fallback;
+  if (error instanceof ApiError) {
+    return error.status === 403 ? `Access forbidden: ${error.detail}` : error.detail;
+  }
+  return `Network error. ${fallback}`;
 }
 
 export function DocumentsPage() {
@@ -34,7 +30,10 @@ export function DocumentsPage() {
   const [documentType, setDocumentType] = useState<DocumentType>("trade_license");
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(true);
+  const [reloadKey, setReloadKey] = useState(0);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
@@ -42,13 +41,15 @@ export function DocumentsPage() {
   useEffect(() => {
     if (!token) return;
     let active = true;
+    setLoading(true);
+    setLoadError(null);
     listDocuments(token)
       .then((data) => {
         if (active) setDocuments(data);
       })
       .catch((caughtError: unknown) => {
         if (active) {
-          setError(messageFrom(caughtError, "Unable to load your documents."));
+          setLoadError(messageFrom(caughtError, "Unable to load your documents."));
         }
       })
       .finally(() => {
@@ -57,7 +58,7 @@ export function DocumentsPage() {
     return () => {
       active = false;
     };
-  }, [token]);
+  }, [reloadKey, token]);
 
   async function handleUpload(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -66,10 +67,16 @@ export function DocumentsPage() {
       return;
     }
     setUploading(true);
+    setUploadProgress(0);
     setError(null);
     setSuccess(null);
     try {
-      const created = await uploadDocument(token, documentType, file);
+      const created = await uploadDocument(
+        token,
+        documentType,
+        file,
+        (progress) => setUploadProgress(progress.percent),
+      );
       setDocuments((current) => [
         created,
         ...current.filter((document) => document.id !== created.id),
@@ -81,6 +88,7 @@ export function DocumentsPage() {
       setError(messageFrom(caughtError, "Unable to upload this document."));
     } finally {
       setUploading(false);
+      setUploadProgress(null);
     }
   }
 
@@ -145,6 +153,21 @@ export function DocumentsPage() {
           </button>
         </form>
 
+        {uploading && (
+          <div className="mt-4" aria-live="polite">
+            <div className="flex justify-between text-sm text-slate-300">
+              <span>Secure upload in progress</span>
+              <span>{uploadProgress === null ? "Calculating…" : `${uploadProgress}%`}</span>
+            </div>
+            <progress
+              aria-label="Document upload progress"
+              className="mt-2 h-2 w-full accent-cyan-400"
+              max={100}
+              value={uploadProgress ?? undefined}
+            />
+          </div>
+        )}
+
         <div className="mt-4" aria-live="polite">
           {error && <p className="text-sm text-rose-300" role="alert">{error}</p>}
           {success && <p className="text-sm text-emerald-300" role="status">{success}</p>}
@@ -155,6 +178,19 @@ export function DocumentsPage() {
         <h2 className="text-xl font-semibold">Uploaded documents</h2>
         {loading ? (
           <p className="mt-5 text-slate-400">Loading documents…</p>
+        ) : loadError ? (
+          <div className="mt-5 rounded-2xl border border-rose-900/70 bg-slate-950 p-5">
+            <p className="text-sm text-rose-300" role="alert">{loadError}</p>
+            {!loadError.startsWith("Access forbidden") && (
+              <button
+                className="secondary-button mt-4 text-sm"
+                type="button"
+                onClick={() => setReloadKey((key) => key + 1)}
+              >
+                Retry
+              </button>
+            )}
+          </div>
         ) : documents.length === 0 ? (
           <p className="mt-5 rounded-2xl bg-slate-950 p-5 text-slate-400">
             No documents uploaded yet.
@@ -167,7 +203,7 @@ export function DocumentsPage() {
                   <p className="font-medium text-slate-100">{document.original_filename}</p>
                   <p className="mt-1 text-sm text-slate-400">
                     {documentTypeLabels[document.document_type]} · {readableSize(document.file_size)} ·{" "}
-                    <span className="capitalize">{document.processing_status}</span>
+                    <span>{processingStatusLabels[document.processing_status]}</span>
                   </p>
                   {document.processing_error && (
                     <p className="mt-2 max-w-2xl text-sm text-amber-300">
@@ -176,6 +212,12 @@ export function DocumentsPage() {
                   )}
                 </div>
                 <div className="flex gap-3">
+                  <Link
+                    className="secondary-button text-sm"
+                    to={`/documents/${document.id}`}
+                  >
+                    View details
+                  </Link>
                   {document.processing_status === "processed" && (
                     <Link
                       className="primary-button text-sm"

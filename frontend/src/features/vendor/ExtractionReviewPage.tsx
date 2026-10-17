@@ -44,6 +44,8 @@ export function ExtractionReviewPage() {
   const [savingField, setSavingField] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [loadErrorStatus, setLoadErrorStatus] = useState<number | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
   const loadFields = useCallback(async () => {
     if (!token || !documentId) return;
@@ -60,6 +62,9 @@ export function ExtractionReviewPage() {
       return;
     }
     let active = true;
+    setLoading(true);
+    setError(null);
+    setLoadErrorStatus(null);
     Promise.all([getDocument(token, documentId), getExtractedFields(token, documentId)])
       .then(([loadedDocument, loadedFields]) => {
         if (!active) return;
@@ -74,6 +79,7 @@ export function ExtractionReviewPage() {
       .catch((caughtError: unknown) => {
         if (active) {
           setError(messageFrom(caughtError, "Unable to load extracted fields."));
+          setLoadErrorStatus(caughtError instanceof ApiError ? caughtError.status : 0);
         }
       })
       .finally(() => {
@@ -82,7 +88,7 @@ export function ExtractionReviewPage() {
     return () => {
       active = false;
     };
-  }, [documentId, token]);
+  }, [documentId, reloadKey, token]);
 
   async function saveField(
     field: ExtractedField,
@@ -124,8 +130,8 @@ export function ExtractionReviewPage() {
 
   return (
     <main className="mx-auto max-w-5xl px-6 py-14">
-      <Link className="text-sm text-cyan-300 hover:text-cyan-200" to="/documents">
-        &larr; Back to documents
+      <Link className="text-sm text-cyan-300 hover:text-cyan-200" to={`/documents/${documentId}`}>
+        &larr; Back to document details
       </Link>
       <section className="mt-5 rounded-3xl border border-slate-800 bg-slate-900 p-8 shadow-2xl">
         <p className="text-sm font-semibold uppercase tracking-[0.2em] text-cyan-400">
@@ -144,6 +150,25 @@ export function ExtractionReviewPage() {
 
         {loading ? (
           <p className="mt-8 text-slate-400">Loading extracted fields...</p>
+        ) : loadErrorStatus !== null ? (
+          <div className="mt-8 rounded-2xl border border-rose-900/70 bg-slate-950 p-5">
+            <p className="text-sm font-semibold text-rose-300">
+              {loadErrorStatus === 403
+                ? "Access forbidden"
+                : loadErrorStatus === 404
+                  ? "Document not found"
+                  : "Unable to load extraction results"}
+            </p>
+            {loadErrorStatus !== 403 && loadErrorStatus !== 404 && (
+              <button
+                className="secondary-button mt-4 text-sm"
+                type="button"
+                onClick={() => setReloadKey((key) => key + 1)}
+              >
+                Retry
+              </button>
+            )}
+          </div>
         ) : fields.length === 0 ? (
           <p className="mt-8 rounded-2xl bg-slate-950 p-5 text-amber-200">
             No readable fields were extracted. Check the document quality or re-upload it.
@@ -168,6 +193,11 @@ export function ExtractionReviewPage() {
                       {field.normalized_value && field.normalized_value !== field.raw_value && (
                         <p className="mt-1 text-sm text-slate-400">
                           Normalized candidate: <span className="text-slate-200">{field.normalized_value}</span>
+                        </p>
+                      )}
+                      {field.confirmed_value && (
+                        <p className="mt-1 text-sm text-slate-400">
+                          Vendor-confirmed: <span className="font-medium text-emerald-200">{field.confirmed_value}</span>
                         </p>
                       )}
                     </div>
