@@ -1,7 +1,8 @@
 from functools import lru_cache
+from typing import Annotated
 
 from pydantic import field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -12,7 +13,7 @@ class Settings(BaseSettings):
     database_url: str = (
         "postgresql+psycopg://vendorflow:vendorflow@localhost:5432/vendorflow"
     )
-    cors_origins: list[str] = ["http://localhost:5173"]
+    cors_origins: Annotated[list[str], NoDecode] = ["http://localhost:5173"]
 
     model_config = SettingsConfigDict(
         env_file=("../.env", ".env"),
