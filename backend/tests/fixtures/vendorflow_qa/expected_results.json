@@ -1,0 +1,76 @@
+{
+  "dataset": "VendorFlow AI synthetic QA documents",
+  "reference_date": "2026-10-19",
+  "fictional_and_not_valid_documents": true,
+  "documents": [
+    {
+      "file": "01_valid_trade_license.pdf",
+      "type": "trade_license",
+      "pdf_text_layer": true,
+      "expected": {
+        "company_name": "NORTHSTAR TRADING LTD",
+        "registration_number": "REG-2026-0042",
+        "license_number": "TL-2026-0042",
+        "issue_date": "2026-01-15",
+        "expiry_date": "2027-12-31",
+        "tax_identifier": "TIN-TEST-642100"
+      },
+      "expected_expired_on_reference_date": false
+    },
+    {
+      "file": "02_valid_business_registration.pdf",
+      "type": "business_registration",
+      "pdf_text_layer": true,
+      "expected": {
+        "company_name": "NORTHSTAR TRADING LTD",
+        "registration_number": "REG-2026-0042",
+        "issue_date": "2026-01-15",
+        "expiry_date": "2028-01-15",
+        "tax_identifier": "TIN-TEST-642100"
+      },
+      "expected_expired_on_reference_date": false
+    },
+    {
+      "file": "03_valid_tax_certificate.pdf",
+      "type": "tax_certificate",
+      "pdf_text_layer": true,
+      "expected": {
+        "company_name": "NORTHSTAR TRADING LTD",
+        "registration_number": "REG-2026-0042",
+        "certificate_number": "TAX-2026-6402",
+        "tax_identifier": "TIN-TEST-642100",
+        "issue_date": "2026-02-01",
+        "expiry_date": "2027-06-30"
+      },
+      "expected_expired_on_reference_date": false
+    },
+    {
+      "file": "04_scanned_expired_name_mismatch.pdf",
+      "type": "trade_license",
+      "pdf_text_layer": false,
+      "expected": {
+        "company_name": "EASTBRIDGE LOGISTICS LTD",
+        "registration_number": "REG-2025-9911",
+        "license_number": "TL-2025-9911",
+        "issue_date": "2024-05-10",
+        "expiry_date": "2025-05-10",
+        "tax_identifier": "TIN-TEST-991100"
+      },
+      "expected_expired_on_reference_date": true
+    }
+  ],
+  "scenarios": {
+    "positive_vendor_A": {
+      "vendor_profile_company": "NORTHSTAR TRADING LTD",
+      "vendor_profile_registration": "REG-2026-0042",
+      "documents": ["01_valid_trade_license.pdf", "02_valid_business_registration.pdf", "03_valid_tax_certificate.pdf"],
+      "expected": "All required documents present, not expired on reference date, no verified company-name mismatch after fields are confirmed. Final score depends on engine rules and confirmation state."
+    },
+    "negative_vendor_B": {
+      "vendor_profile_company": "NORTHSTAR TRADING LTD",
+      "vendor_profile_registration": "REG-2026-0099",
+      "documents": ["04_scanned_expired_name_mismatch.pdf"],
+      "expected": "After actual OCR and user confirmation, expired license and verified company-name mismatch; missing other required document findings if configured. No automatic fraud verdict."
+    }
+  }
+}

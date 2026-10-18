@@ -1,0 +1,23 @@
+{
+  "status": "PASS",
+  "database": "isolated fresh vendorflow on port 55433; confirmed empty before downgrade",
+  "phases": [
+    {
+      "command": "alembic heads",
+      "exit_code": 0
+    },
+    {
+      "command": "alembic downgrade base",
+      "exit_code": 0
+    },
+    {
+      "command": "alembic upgrade head",
+      "exit_code": 0
+    },
+    {
+      "command": "alembic check",
+      "exit_code": 0
+    }
+  ],
+  "head": "0006_review"
+}

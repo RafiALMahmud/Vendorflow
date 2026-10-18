@@ -1,0 +1,92 @@
+{
+  "source_sha": "d8b40089029f4decc0c0521ae0a820c2a7fa65ef",
+  "origin": "https://github.com/RafiALMahmud/Vendorflow",
+  "phases": [
+    {
+      "name": "fresh GitHub clone",
+      "command": [
+        "git",
+        "clone",
+        "--single-branch",
+        "--branch",
+        "feat/complete-vendorflow-mvp",
+        "https://github.com/RafiALMahmud/Vendorflow",
+        "E:\\Vendorflow\\Vendorflow\\.local\\fresh-checkout"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 2.06
+    },
+    {
+      "name": "documented automatic setup",
+      "command": [
+        "powershell",
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "scripts/Setup-Local.ps1",
+        "-PostgresBin",
+        "E:/PostgreSQL/17/bin",
+        "-DatabasePort",
+        "55433",
+        "-SkipOcr"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 242.32
+    },
+    {
+      "name": "fresh backend suite with real OCR",
+      "command": [
+        "E:\\Vendorflow\\Vendorflow\\.local\\fresh-checkout\\.venv\\Scripts\\python.exe",
+        "-m",
+        "pytest",
+        "backend/tests"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 45.24
+    },
+    {
+      "name": "fresh migration consistency",
+      "command": [
+        "E:\\Vendorflow\\Vendorflow\\.local\\fresh-checkout\\.venv\\Scripts\\python.exe",
+        "-m",
+        "alembic",
+        "check"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 3.36
+    },
+    {
+      "name": "fresh frontend test",
+      "command": [
+        "npm.cmd",
+        "test"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 28.07
+    },
+    {
+      "name": "fresh frontend run lint",
+      "command": [
+        "npm.cmd",
+        "run",
+        "lint"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 11.52
+    },
+    {
+      "name": "fresh frontend run build",
+      "command": [
+        "npm.cmd",
+        "run",
+        "build"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 17.66
+    }
+  ],
+  "reused_ocr_installation": true,
+  "database_port": 55433,
+  "status": "PASS"
+}

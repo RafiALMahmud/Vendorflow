@@ -1,0 +1,23 @@
+.review-workspace button {
+  border: 1px solid #475569;
+  border-radius: .65rem;
+  padding: .55rem .9rem;
+  background: #1e293b;
+  color: #e2e8f0;
+  cursor: pointer;
+}
+.review-workspace button:hover:enabled { background: #334155; }
+.review-workspace button:disabled { opacity: .45; cursor: not-allowed; }
+.review-workspace input, .review-workspace select, .review-workspace textarea {
+  background: #0f172a; color: #f1f5f9; border: 1px solid #475569;
+  border-radius: .5rem; padding: .5rem; margin-left: .4rem;
+}
+.review-workspace th, .review-workspace td { padding: .85rem; border-bottom: 1px solid #334155; }
+.review-workspace table { background: #0f172a; }
+.review-workspace li { margin-block: .6rem; }
+.review-workspace dialog { max-width: min(90vw, 36rem); margin: auto; }
+.review-workspace dialog::backdrop { background: #020617cc; }
+.review-workspace li ul { padding-left: 1rem; color: #94a3b8; }
+.review-workspace [role="alert"] { color: #fda4af; }
+.review-workspace button:focus-visible, .review-workspace input:focus-visible,
+.review-workspace select:focus-visible, .review-workspace textarea:focus-visible { outline: 2px solid #22d3ee; outline-offset: 3px; }

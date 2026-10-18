@@ -1,7 +1,16 @@
 from functools import lru_cache
+import json
+from pathlib import Path
+from typing import Annotated, Literal
 
-from pydantic import field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import Field, SecretStr, field_validator, model_validator
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
+
+INSECURE_JWT_SECRETS = {
+    "development-only-change-this-secret-before-deployment",
+    "replace-with-at-least-32-random-characters",
+}
+DEFAULT_DOCUMENT_STORAGE_DIR = Path(__file__).resolve().parents[3] / "private_uploads"
 
 
 class Settings(BaseSettings):
@@ -12,7 +21,26 @@ class Settings(BaseSettings):
     database_url: str = (
         "postgresql+psycopg://vendorflow:vendorflow@localhost:5432/vendorflow"
     )
-    cors_origins: list[str] = ["http://localhost:5173"]
+    test_database_url: str = (
+        "postgresql+psycopg://vendorflow:vendorflow@localhost:5432/vendorflow_test"
+    )
+    cors_origins: Annotated[list[str], NoDecode] = ["http://localhost:5173"]
+    jwt_secret_key: SecretStr = SecretStr(
+        "development-only-change-this-secret-before-deployment"
+    )
+    jwt_algorithm: Literal["HS256", "HS384", "HS512"] = "HS256"
+    access_token_expire_minutes: int = Field(default=30, ge=5, le=1440)
+    document_storage_dir: Path = DEFAULT_DOCUMENT_STORAGE_DIR
+    document_max_file_size_bytes: int = Field(
+        default=10 * 1024 * 1024,
+        ge=1024,
+        le=50 * 1024 * 1024,
+    )
+    tesseract_cmd: Path | None = None
+    tesseract_data_dir: Path | None = None
+    tesseract_language: str = Field(default="eng", pattern=r"^[A-Za-z0-9_+.-]+$")
+    tesseract_timeout_seconds: int = Field(default=30, ge=5, le=120)
+    extraction_max_pdf_pages: int = Field(default=20, ge=1, le=100)
 
     model_config = SettingsConfigDict(
         env_file=("../.env", ".env"),
@@ -24,8 +52,24 @@ class Settings(BaseSettings):
     @classmethod
     def parse_cors_origins(cls, value: object) -> object:
         if isinstance(value, str):
+            if value.lstrip().startswith("["):
+                return json.loads(value)
             return [origin.strip() for origin in value.split(",") if origin.strip()]
         return value
+
+    @field_validator("tesseract_cmd", "tesseract_data_dir", mode="before")
+    @classmethod
+    def parse_optional_tesseract_path(cls, value: object) -> object:
+        return None if value == "" else value
+
+    @model_validator(mode="after")
+    def reject_development_jwt_secret_outside_local_environments(self) -> "Settings":
+        secret = self.jwt_secret_key.get_secret_value()
+        if len(secret) < 32:
+            raise ValueError("JWT_SECRET_KEY must contain at least 32 characters")
+        if self.app_env not in {"development", "test"} and secret in INSECURE_JWT_SECRETS:
+            raise ValueError("JWT_SECRET_KEY must be configured outside development/test")
+        return self
 
 
 @lru_cache

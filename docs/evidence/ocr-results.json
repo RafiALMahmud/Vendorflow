@@ -1,0 +1,99 @@
+{
+  "reference_date": "2026-10-19",
+  "executed_at_utc": "2026-10-18T19:00:15.996656+00:00",
+  "fictional_small_sample_only": true,
+  "documents": [
+    {
+      "file": "01_valid_trade_license.pdf",
+      "expected": {
+        "company_name": "NORTHSTAR TRADING LTD",
+        "registration_number": "REG-2026-0042",
+        "license_number": "TL-2026-0042",
+        "issue_date": "2026-01-15",
+        "expiry_date": "2027-12-31",
+        "tax_identifier": "TIN-TEST-642100"
+      },
+      "expected_fields": 6,
+      "method": "pdf_text",
+      "observed": {
+        "company_name": "NORTHSTAR TRADING LTD",
+        "registration_number": "REG-2026-0042",
+        "license_number": "TL-2026-0042",
+        "issue_date": "2026-01-15",
+        "expiry_date": "2027-12-31",
+        "tax_identifier": "TIN-TEST-642100"
+      },
+      "matches": 6,
+      "status": "PASS"
+    },
+    {
+      "file": "02_valid_business_registration.pdf",
+      "expected": {
+        "company_name": "NORTHSTAR TRADING LTD",
+        "registration_number": "REG-2026-0042",
+        "issue_date": "2026-01-15",
+        "expiry_date": "2028-01-15",
+        "tax_identifier": "TIN-TEST-642100"
+      },
+      "expected_fields": 5,
+      "method": "pdf_text",
+      "observed": {
+        "company_name": "NORTHSTAR TRADING LTD",
+        "registration_number": "REG-2026-0042",
+        "issue_date": "2026-01-15",
+        "expiry_date": "2028-01-15",
+        "tax_identifier": "TIN-TEST-642100"
+      },
+      "matches": 5,
+      "status": "PASS"
+    },
+    {
+      "file": "03_valid_tax_certificate.pdf",
+      "expected": {
+        "company_name": "NORTHSTAR TRADING LTD",
+        "registration_number": "REG-2026-0042",
+        "certificate_number": "TAX-2026-6402",
+        "tax_identifier": "TIN-TEST-642100",
+        "issue_date": "2026-02-01",
+        "expiry_date": "2027-06-30"
+      },
+      "expected_fields": 6,
+      "method": "pdf_text",
+      "observed": {
+        "company_name": "NORTHSTAR TRADING LTD",
+        "registration_number": "REG-2026-0042",
+        "certificate_number": "TAX-2026-6402",
+        "issue_date": "2026-02-01",
+        "expiry_date": "2027-06-30",
+        "tax_identifier": "TIN-TEST-642100"
+      },
+      "matches": 6,
+      "status": "PASS"
+    },
+    {
+      "file": "04_scanned_expired_name_mismatch.pdf",
+      "expected": {
+        "company_name": "EASTBRIDGE LOGISTICS LTD",
+        "registration_number": "REG-2025-9911",
+        "license_number": "TL-2025-9911",
+        "issue_date": "2024-05-10",
+        "expiry_date": "2025-05-10",
+        "tax_identifier": "TIN-TEST-991100"
+      },
+      "expected_fields": 6,
+      "method": "tesseract_ocr",
+      "observed": {
+        "company_name": "EASTBRIDGE LOGISTICS LTD",
+        "registration_number": "REG-2025-9911",
+        "license_number": "TL-2025-9911",
+        "issue_date": "2024-05-10",
+        "expiry_date": "2025-05-10",
+        "tax_identifier": "TIN-TEST-991100"
+      },
+      "matches": 6,
+      "status": "PASS"
+    }
+  ],
+  "exact_matches": 23,
+  "expected_fields": 23
+}
