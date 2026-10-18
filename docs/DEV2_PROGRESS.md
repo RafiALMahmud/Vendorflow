@@ -1,3 +1,5 @@
+> Historical 2026-10-18 milestone record. Superseded by [QA_RESULTS.md](QA_RESULTS.md) and [SETUP_REPORT.md](SETUP_REPORT.md) for the 2026-10-19 complete-MVP release.
+
 # Combined Developer 1 + Developer 2 integration
 
 Integrated Developer 1 commit 04b8cf4 into feat/dev2-risk-review, preserving its

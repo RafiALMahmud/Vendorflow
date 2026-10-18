@@ -1,3 +1,5 @@
+> Historical 2026-10-18 milestone record. Superseded by [QA_RESULTS.md](QA_RESULTS.md) and [SETUP_REPORT.md](SETUP_REPORT.md) for the 2026-10-19 complete-MVP release.
+
 # Integrated local environment
 
 Checkout: E:\Vendorflow\Vendorflow, branch feat/dev2-risk-review.

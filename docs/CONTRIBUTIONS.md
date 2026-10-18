@@ -65,3 +65,20 @@ is saved locally under ignored `.local/screenshots/`.
 No trained model, real fraud determination, production readiness, or real OCR on
 this machine is claimed. Tesseract is unavailable; digital PDF extraction is real,
 and OCR paths are mocked in automated tests.
+
+
+## 2026-10-19 completion work on feat/complete-vendorflow-mvp
+
+The team leader authorized finishing both workstreams. Original D1 and D2 module
+ownership/history above is preserved. This run added generic release-layout parser
+fixes and certificate numbers, portable OCR verification/configuration, session
+expiry, owner-only failed-extraction retry, case-scoped admin file access, decision
+confirmation dialogs, Playwright browser acceptance, fresh setup scripts, CI and
+release evidence. It did not claim the teammate's original work as new integration
+work or rewrite their commits.
+
+Current evidence supersedes historical counts/blocked OCR above: 182 backend tests,
+27 frontend tests, two real browser scenarios, lint/build/migrations/fresh checkout
+and all four CI jobs pass. The supplied four fictional PDFs match 23/23 fields,
+including 6/6 actually OCR-read fields in the scan. This is a separate narrow
+measurement from D1's original corpus; no real-world OCR/fraud claim is made.
