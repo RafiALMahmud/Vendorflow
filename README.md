@@ -8,6 +8,13 @@ This repository currently contains the Phase 0 runnable baseline: a typed backen
 health endpoint and a frontend screen that calls it. Product scope and ownership
 are defined in `PROJECT_SPEC.md` and `TEAM_TASKS.md`.
 
+The Developer 2 branch also provides an independently tested risk engine,
+review workflow policy, and React review/status components. Authenticated review
+APIs, PostgreSQL review persistence, and UI routing await Developer 1's base
+identity migrations and auth/snapshot interfaces. See
+[`docs/DEV2_PROGRESS.md`](docs/DEV2_PROGRESS.md) and
+[`docs/DEV2_SETUP.md`](docs/DEV2_SETUP.md) for actual validation and next steps.
+
 ## Prerequisites
 
 - Python 3.11 or newer
