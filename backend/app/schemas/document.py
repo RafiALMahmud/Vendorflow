@@ -42,6 +42,7 @@ EditableFieldName = Literal[
     "company_name",
     "registration_number",
     "license_number",
+    "certificate_number",
     "issue_date",
     "expiry_date",
     "tax_identifier",
@@ -83,7 +84,7 @@ class ExtractedFieldReviewUpdate(BaseModel):
 class ExtractedFieldsReviewRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    fields: list[ExtractedFieldReviewUpdate] = Field(min_length=1, max_length=6)
+    fields: list[ExtractedFieldReviewUpdate] = Field(min_length=1, max_length=7)
 
     @model_validator(mode="after")
     def reject_duplicate_fields(self) -> "ExtractedFieldsReviewRequest":

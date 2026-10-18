@@ -15,6 +15,8 @@
 .review-workspace th, .review-workspace td { padding: .85rem; border-bottom: 1px solid #334155; }
 .review-workspace table { background: #0f172a; }
 .review-workspace li { margin-block: .6rem; }
+.review-workspace dialog { max-width: min(90vw, 36rem); margin: auto; }
+.review-workspace dialog::backdrop { background: #020617cc; }
 .review-workspace li ul { padding-left: 1rem; color: #94a3b8; }
 .review-workspace [role="alert"] { color: #fda4af; }
 .review-workspace button:focus-visible, .review-workspace input:focus-visible,

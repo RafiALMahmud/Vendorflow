@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { CaseDetail, Dashboard, QueuePage, QueueQuery, ReviewApi, ReviewDecision } from '../applications/types';
 import './review.css';
+import { DecisionDialog } from './DecisionDialog';
 
 type Props = { api: ReviewApi };
 type Data = { dashboard: Dashboard; queue: QueuePage };
@@ -37,7 +38,7 @@ export function AdminDashboard({ api }: Props) {
       {data.queue.items.length === 0 ? <p>No applications match these filters.</p> : <div className="overflow-x-auto"><table className="w-full text-left">
         <caption className="sr-only">Vendor application review queue</caption>
         <thead><tr><th scope="col">Company</th><th scope="col">Status</th><th scope="col">Submitted</th><th scope="col">Review</th></tr></thead>
-        <tbody>{data.queue.items.map(item => <tr key={item.id}><td>{item.company_name}</td><td>{item.status.replaceAll('_', ' ')}</td>
+        <tbody>{data.queue.items.map(item => <tr key={item.id} data-application-id={item.id}><td>{item.company_name}</td><td>{item.status.replaceAll('_', ' ')}</td>
           <td>{item.submitted_at ? new Date(item.submitted_at).toLocaleString() : 'Not submitted'}</td>
           <td><button onClick={() => setSelected(item.id)}>Open {item.company_name}</button></td></tr>)}</tbody>
       </table></div>}
@@ -59,6 +60,8 @@ export function ApplicationReview({ id, api, onReviewed }: Props & { id: string;
   const [busy, setBusy] = useState(false);
   const [stale, setStale] = useState(false);
   const [refresh, setRefresh] = useState(0);
+  const [decision, setDecision] = useState<ReviewDecision | null>(null);
+  const [downloading, setDownloading] = useState<string | null>(null);
   useEffect(() => {
     const controller = new AbortController();
     api.detail(id, controller.signal).then(data => { if (!controller.signal.aborted) setDetail(data); })
@@ -72,7 +75,19 @@ export function ApplicationReview({ id, api, onReviewed }: Props & { id: string;
       setDetail(await api.review(id, decision, note.trim(), detail.application.version));
       setNote(''); onReviewed();
     } catch (e) { setError(e instanceof Error ? e.message : 'Review failed.'); setStale(true); }
-    finally { setBusy(false); }
+    finally { setBusy(false); setDecision(null); }
+  }
+  async function download(documentId: string, documentType: string) {
+    if (!api.downloadEvidence) return;
+    setDownloading(documentId); setError('');
+    try {
+      const blob = await api.downloadEvidence(id, documentId);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url; link.download = `${documentType}.${blob.type.includes('pdf') ? 'pdf' : blob.type.includes('png') ? 'png' : 'jpg'}`;
+      link.click(); URL.revokeObjectURL(url);
+    } catch (error) { setError(error instanceof Error ? error.message : 'Unable to download evidence.'); }
+    finally { setDownloading(null); }
   }
   return <article className="space-y-4" aria-busy={busy}>
     {error && <p role="alert">{error}</p>}
@@ -87,6 +102,8 @@ export function ApplicationReview({ id, api, onReviewed }: Props & { id: string;
           <ul>{f.evidence.map((e, i) => <li key={i}>{e.document_type} · {e.document_id ?? 'Missing document'} · {e.field_name ?? 'Document'}</li>)}</ul></li>)}</ul></> : <p>No assessment yet.</p>}
       <h3 className="font-bold">Document evidence</h3>
       <ul>{detail.documents.map(d => <li key={d.document_id}>{d.document_type} · {d.document_id} · {d.processing_status}
+        {api.downloadEvidence && <button className="ml-3" disabled={downloading !== null} onClick={() => void download(d.document_id, d.document_type)}>
+          {downloading === d.document_id ? 'Downloading…' : `Download ${d.document_type.replaceAll('_', ' ')}`}</button>}
         <dl>{Object.entries(d.fields ?? {}).map(([name, field]) => <div key={name} className="my-2 rounded border border-slate-700 p-3">
           <dt className="font-semibold">{name.replaceAll('_', ' ')}</dt>
           <dd>Extracted: {field.raw_value ?? 'Unreadable'} · Reviewed: {field.confirmed_value ?? 'Unverified'} · {field.review_status}</dd>
@@ -95,10 +112,12 @@ export function ApplicationReview({ id, api, onReviewed }: Props & { id: string;
       {['submitted', 'resubmitted'].includes(detail.application.status) && <fieldset disabled={busy || stale} className="space-y-3">
         <legend>Human review decision</legend>
         <label>Review note (required for rejection or correction)<textarea maxLength={4000} value={note} onChange={e => setNote(e.target.value)} className="block w-full border p-2" /></label>
-        <div className="flex flex-wrap gap-4"><button onClick={() => void decide('approved')}>Approve</button>
-          <button disabled={!note.trim()} onClick={() => void decide('rejected')}>Reject</button>
-          <button disabled={!note.trim()} onClick={() => void decide('needs_correction')}>Request corrections</button></div>
+        <div className="flex flex-wrap gap-4"><button onClick={() => setDecision('approved')}>Approve</button>
+          <button disabled={!note.trim()} onClick={() => setDecision('rejected')}>Reject</button>
+          <button disabled={!note.trim()} onClick={() => setDecision('needs_correction')}>Request corrections</button></div>
       </fieldset>}
+      {decision && <DecisionDialog decision={decision} note={note} busy={busy}
+        onCancel={() => setDecision(null)} onConfirm={() => void decide(decision)} />}
       <h3 className="font-bold">Audit history</h3>
       {detail.audit_events.length === 0 ? <p>No recorded events.</p> : <ol>{detail.audit_events.map(e =>
         <li key={e.id}><time dateTime={e.created_at}>{new Date(e.created_at).toLocaleString()}</time> · {e.actor_user_id} · {e.action} · {e.note}</li>)}</ol>}

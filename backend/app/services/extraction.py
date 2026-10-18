@@ -25,25 +25,24 @@ logger = logging.getLogger(__name__)
 PDF_TEXT_METHOD = "pdf_text"
 OCR_METHOD = "tesseract_ocr"
 DATE_FIELDS = {"issue_date", "expiry_date"}
+FIELD_LABELS = {
+    'company_name': r'(?:company|business)[ \t]+name',
+    'registration_number': r'(?:registration(?:[ \t]+(?:number|no\.?))?|reg\.?(?:[ \t]+(?:number|no\.?))?)',
+    'license_number': r'(?:trade[ \t]+)?licen[cs]e[ \t]+(?:number|no\.?)',
+    'certificate_number': r'certificate[ \t]+(?:number|no\.?)',
+    'issue_date': r'(?:issue|issued)[ \t]+date',
+    'expiry_date': r'(?:expiry|expiration|expires?)[ \t]+date',
+    'tax_identifier': r'(?:tax[ \t]+(?:identifier|id)|tin)(?:[ \t]+(?:number|no\.?))?',
+}
+
+# Support label:value, OCR column rows and a label on the line before its value.
+# A bare hyphen is not a delimiter: identifiers like REG-2026 and TIN-TEST are
+# values, never labels. Horizontal whitespace must not consume the next row.
 FIELD_PATTERNS: dict[str, tuple[re.Pattern[str], ...]] = {
-    "company_name": (
-        re.compile(r"(?im)^\s*(?:company|business)\s+name\s*[:\-]\s*(?P<value>[^\r\n]+)"),
-    ),
-    "registration_number": (
-        re.compile(r"(?im)^\s*(?:registration|reg\.?)[\s#]*(?:number|no\.?)?\s*[:\-]\s*(?P<value>[^\r\n]+)"),
-    ),
-    "license_number": (
-        re.compile(r"(?im)^\s*(?:trade\s+)?licen[cs]e[\s#]*(?:number|no\.?)?\s*[:\-]\s*(?P<value>[^\r\n]+)"),
-    ),
-    "issue_date": (
-        re.compile(r"(?im)^\s*(?:issue|issued)\s+date\s*[:\-]\s*(?P<value>[^\r\n]+)"),
-    ),
-    "expiry_date": (
-        re.compile(r"(?im)^\s*(?:expiry|expiration|expires?)\s+date\s*[:\-]\s*(?P<value>[^\r\n]+)"),
-    ),
-    "tax_identifier": (
-        re.compile(r"(?im)^\s*(?:tax\s+(?:identifier|id)|tin)[\s#]*(?:number|no\.?)?\s*[:\-]\s*(?P<value>[^\r\n]+)"),
-    ),
+    name: (
+        re.compile(rf'(?im)^[ \t]*(?:{label})[ \t]*:?[ \t]*\r?\n[ \t]*(?P<value>[^\r\n]+)$'),
+        re.compile(rf'(?im)^[ \t]*(?:{label})(?:[ \t]*:[ \t]*|[ \t]+-[ \t]+|[ \t]+)(?P<value>[^\r\n]+)$'),
+    ) for name, label in FIELD_LABELS.items()
 }
 
 
@@ -90,17 +89,12 @@ def _tesseract_executable(settings: Settings) -> str:
 
 def _run_tesseract(image_bytes: bytes, settings: Settings) -> str:
     executable = _tesseract_executable(settings)
+    arguments = [executable, "stdin", "stdout", "-l", settings.tesseract_language, "--psm", "6"]
+    if settings.tesseract_data_dir is not None:
+        arguments.extend(["--tessdata-dir", str(settings.tesseract_data_dir)])
     try:
         result = subprocess.run(
-            [
-                executable,
-                "stdin",
-                "stdout",
-                "-l",
-                settings.tesseract_language,
-                "--psm",
-                "6",
-            ],
+            arguments,
             input=image_bytes,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
@@ -226,6 +220,8 @@ def normalize_date(raw_value: str) -> tuple[str | None, str | None]:
 
 
 def parse_fictional_document(text: str) -> list[ParsedField]:
+    # Tesseract on Windows may emit CRCRLF; normalize before anchored matching.
+    text = '\n'.join(text.splitlines())
     parsed: list[ParsedField] = []
     for field_name, patterns in FIELD_PATTERNS.items():
         match = None

@@ -119,7 +119,7 @@ export function DocumentsPage() {
         </p>
         <h1 className="mt-3 text-3xl font-bold">Vendor documents</h1>
         <p className="mt-2 text-slate-400">
-          Upload PDF, JPG, JPEG, or PNG files. Files are private to your vendor account.
+          Upload PDF, JPG, JPEG, or PNG files. Submitted evidence is available only to you and authorized reviewers.
         </p>
 
         <form className="mt-8 grid gap-5 md:grid-cols-[1fr_1.5fr_auto] md:items-end" onSubmit={handleUpload}>

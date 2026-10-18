@@ -66,6 +66,7 @@ export type ExtractedFieldName =
   | "company_name"
   | "registration_number"
   | "license_number"
+  | "certificate_number"
   | "issue_date"
   | "expiry_date"
   | "tax_identifier";
@@ -100,6 +101,8 @@ export class ApiError extends Error {
     super(detail);
   }
 }
+
+export const SESSION_EXPIRED_EVENT = 'vendorflow:session-expired';
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000/api/v1";
@@ -139,6 +142,7 @@ export async function apiRequest<T>(path: string, options: ApiOptions = {}): Pro
   });
 
   if (!response.ok) {
+    if (response.status === 401 && token) window.dispatchEvent(new Event(SESSION_EXPIRED_EVENT));
     let detail = "Request failed. Please try again.";
     try {
       const errorBody = (await response.json()) as { detail?: unknown };
@@ -290,6 +294,7 @@ export function uploadDocument(
         typeof payload.detail === "string"
           ? payload.detail
           : "Unable to upload this document.";
+      if (request.status === 401) window.dispatchEvent(new Event(SESSION_EXPIRED_EVENT));
       reject(new ApiError(request.status, detail));
     });
     request.addEventListener("error", () => {
@@ -307,5 +312,9 @@ export function downloadDocument(token: string, documentId: string): Promise<Blo
     token,
     responseType: "blob",
   });
+}
+
+export function retryDocument(token: string, documentId: string): Promise<VendorDocument> {
+  return apiRequest(`/documents/${encodeURIComponent(documentId)}/retry`, { token, method: 'POST' });
 }
 

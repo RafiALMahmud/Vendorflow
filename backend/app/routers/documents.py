@@ -6,6 +6,7 @@ from fastapi.responses import FileResponse
 from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
+from starlette.concurrency import run_in_threadpool
 
 from app.core.auth import require_vendor
 from app.core.config import get_settings
@@ -99,8 +100,18 @@ async def upload_document(
             detail="Unable to save document metadata",
         ) from None
     db.refresh(document)
-    document = process_document(document.id, db, settings)
+    document = await run_in_threadpool(process_document, document.id, db, settings)
     return document
+
+
+@router.post('/{document_id}/retry', response_model=DocumentResponse)
+def retry_failed_document(document_id: UUID, current_user: VendorUser, db: Database):
+    document = db.scalar(owned_document_query(document_id, current_user).with_for_update())
+    if document is None:
+        raise HTTPException(404, 'Document not found')
+    if document.processing_status != ProcessingStatus.FAILED:
+        raise HTTPException(409, 'Only failed extraction can be retried; reviewed fields are preserved')
+    return process_document(document.id, db, get_settings())
 
 
 @router.get("", response_model=list[DocumentResponse])
@@ -229,4 +240,5 @@ def download_document(
         media_type=document.mime_type,
         filename=document.original_filename,
         content_disposition_type="attachment",
+        headers={'Cache-Control': 'private, no-store', 'X-Content-Type-Options': 'nosniff'},
     )

@@ -37,6 +37,7 @@ class Settings(BaseSettings):
         le=50 * 1024 * 1024,
     )
     tesseract_cmd: Path | None = None
+    tesseract_data_dir: Path | None = None
     tesseract_language: str = Field(default="eng", pattern=r"^[A-Za-z0-9_+.-]+$")
     tesseract_timeout_seconds: int = Field(default=30, ge=5, le=120)
     extraction_max_pdf_pages: int = Field(default=20, ge=1, le=100)
@@ -56,7 +57,7 @@ class Settings(BaseSettings):
             return [origin.strip() for origin in value.split(",") if origin.strip()]
         return value
 
-    @field_validator("tesseract_cmd", mode="before")
+    @field_validator("tesseract_cmd", "tesseract_data_dir", mode="before")
     @classmethod
     def parse_optional_tesseract_path(cls, value: object) -> object:
         return None if value == "" else value

@@ -5,7 +5,7 @@ import { ApiError } from "../../shared/api";
 import { useAuth } from "./useAuth";
 
 export function LoginPage() {
-  const { login } = useAuth();
+  const { login, sessionExpired } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [email, setEmail] = useState("");
@@ -47,6 +47,7 @@ export function LoginPage() {
   return (
     <AuthCard title="Welcome back" subtitle="Sign in to your vendor workspace.">
       <form className="space-y-5" onSubmit={handleSubmit}>
+        {sessionExpired && <p role="status" className="text-amber-200">Your session expired. Please sign in again.</p>}
         {registered && (
           <p className="rounded-xl bg-emerald-950/60 px-4 py-3 text-sm text-emerald-200" role="status">
             Account created successfully. Sign in to continue.

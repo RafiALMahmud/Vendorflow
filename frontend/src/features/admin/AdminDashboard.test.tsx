@@ -57,6 +57,9 @@ test('reject/correct require note and a decision carries the loaded version', as
   expect(screen.getByRole('button', { name: 'Request corrections' })).toBeDisabled();
   fireEvent.change(screen.getByRole('textbox'), { target: { value: ' Please update license ' } });
   fireEvent.click(reject);
+  expect(screen.getByRole('dialog')).toBeInTheDocument();
+  expect(client.review).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole('button', { name: 'Confirm decision' }));
   await waitFor(() => expect(client.review).toHaveBeenCalledWith(application.id, 'rejected', 'Please update license', 3));
   await waitFor(() => expect(onReviewed).toHaveBeenCalledOnce());
   expect(screen.queryByRole('button', { name: 'Approve' })).not.toBeInTheDocument();
@@ -67,6 +70,7 @@ test('conflict disables stale decisions until case is reloaded', async () => {
   vi.mocked(client.review).mockRejectedValue(new ApiError(409, 'This application changed. Reload it before reviewing.'));
   render(<ApplicationReview id={application.id} api={client} onReviewed={vi.fn()} />);
   fireEvent.click(await screen.findByRole('button', { name: 'Approve' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Confirm decision' }));
   expect(await screen.findByRole('alert')).toHaveTextContent('This application changed');
   expect(screen.getByRole('button', { name: 'Approve' })).toBeDisabled();
   fireEvent.click(screen.getByRole('button', { name: 'Reload case' }));

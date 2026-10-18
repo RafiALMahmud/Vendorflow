@@ -3,6 +3,7 @@ import { apiRequest } from '../../shared/api';
 
 export function reviewApiForToken(token: string): ReviewApi {
   return {
+    downloadEvidence: (id, documentId) => apiRequest(`/admin/applications/${encodeURIComponent(id)}/documents/${encodeURIComponent(documentId)}/file`, { token, responseType: 'blob' }),
     dashboard: signal => apiRequest('/admin/dashboard', { token, signal }),
     queue: (query, signal) => apiRequest(`/admin/applications?${new URLSearchParams({
       status: query.status, search: query.search, page: String(query.page), page_size: '20',

@@ -16,6 +16,7 @@ const fieldLabels: Record<ExtractedFieldName, string> = {
   company_name: "Company name",
   registration_number: "Registration number",
   license_number: "License number",
+  certificate_number: "Certificate number",
   issue_date: "Issue date",
   expiry_date: "Expiry date",
   tax_identifier: "Tax identifier",

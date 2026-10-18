@@ -5,6 +5,7 @@ import react from "@vitejs/plugin-react";
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   test: {
+    include: ['src/**/*.test.{ts,tsx}'],
     maxWorkers: 2,
     environment: "jsdom",
     setupFiles: "./src/test/setup.ts",

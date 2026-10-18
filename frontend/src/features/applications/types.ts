@@ -30,6 +30,7 @@ export type QueueQuery = { status: string; search: string; page: number };
 export type QueuePage = { items: Application[]; total: number; page: number; page_size: number };
 export type Dashboard = { total: number; awaiting_review: number; approved: number; rejected: number; needs_correction: number };
 export interface ReviewApi {
+  downloadEvidence?(applicationId: string, documentId: string): Promise<Blob>;
   dashboard(signal?: AbortSignal): Promise<Dashboard>;
   queue(query: QueueQuery, signal?: AbortSignal): Promise<QueuePage>;
   detail(id: string, signal?: AbortSignal): Promise<CaseDetail>;

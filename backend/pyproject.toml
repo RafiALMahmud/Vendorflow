@@ -35,4 +35,5 @@ packages = ["app"]
 [tool.pytest.ini_options]
 addopts = "-q"
 testpaths = ["tests"]
+markers = ["real_ocr: opt-in execution against an installed Tesseract binary"]
 

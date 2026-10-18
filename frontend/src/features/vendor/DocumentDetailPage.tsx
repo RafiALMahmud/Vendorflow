@@ -6,6 +6,7 @@ import {
   downloadDocument,
   getDocument,
   getExtractedFields,
+  retryDocument,
   type ExtractedField,
   type VendorDocument,
 } from "../../shared/api";
@@ -44,6 +45,7 @@ export function DocumentDetailPage() {
   const [reloadKey, setReloadKey] = useState(0);
   const [downloading, setDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState<string | null>(null);
+  const [retrying, setRetrying] = useState(false);
 
   useEffect(() => {
     if (!token || !documentId) return;
@@ -169,6 +171,13 @@ export function DocumentDetailPage() {
         )}
 
         <div className="mt-8 flex flex-wrap gap-3">
+          {state.document.processing_status === 'failed' && <button className="primary-button" disabled={retrying} onClick={async () => {
+            if (!token) return;
+            setRetrying(true); setDownloadError(null);
+            try { await retryDocument(token, state.document.id); setReloadKey(key => key + 1); }
+            catch (error) { setDownloadError(error instanceof Error ? error.message : 'Unable to retry extraction.'); }
+            finally { setRetrying(false); }
+          }}>{retrying ? 'Retrying extraction…' : 'Retry extraction'}</button>}
           {state.document.processing_status === "processed" && state.fields.length > 0 && (
             <Link className="primary-button" to={`/documents/${state.document.id}/review`}>
               Review extracted fields
