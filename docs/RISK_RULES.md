@@ -34,5 +34,6 @@ Findings/evidence have stable ordering independent of document input order.
 Clamp score to 0–100. 80–100: low_review_priority; 50–79:
 medium_review_priority; 0–49: high_review_priority. Store rules version, reference
 date and the complete assessment when submission integration becomes available.
-The local Pydantic input boundary lives in Dev 2's `schemas/risk.py`; it is not a
-competing snapshot builder. Reuse Dev 1's shared contract once merged and reviewed.
+Live submission calls Dev 1's shared snapshot builder and maps its serialized,
+validated contract into Dev 2's risk input boundary in schemas/risk.py. No parallel
+snapshot builder, OCR service or authentication system is introduced.

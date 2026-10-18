@@ -22,7 +22,8 @@ export type Assessment = {
 export type CaseDetail = {
   application: Application;
   assessment: Assessment | null;
-  documents: { document_id: string; document_type: string; processing_status: string }[];
+  documents: { document_id: string; document_type: string; processing_status: string;
+    fields?: Record<string, { raw_value: string | null; confirmed_value: string | null; review_status: string }> }[];
   audit_events: { id: string; action: string; actor_user_id: string; created_at: string; note: string }[];
 };
 export type QueueQuery = { status: string; search: string; page: number };

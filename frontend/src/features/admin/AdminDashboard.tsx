@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { CaseDetail, Dashboard, QueuePage, QueueQuery, ReviewApi, ReviewDecision } from '../applications/types';
+import './review.css';
 
 type Props = { api: ReviewApi };
 type Data = { dashboard: Dashboard; queue: QueuePage };
@@ -19,7 +20,7 @@ export function AdminDashboard({ api }: Props) {
   }, [api, query, refresh]);
   function reload() { setData(null); setError(''); setRefresh(value => value + 1); }
   function filter(next: Partial<QueueQuery>) { setData(null); setError(''); setQuery({ ...query, ...next }); }
-  return <main className="mx-auto max-w-6xl space-y-6 p-6 text-slate-900">
+  return <main className="review-workspace mx-auto max-w-6xl space-y-6 p-6 text-slate-100">
     <h1 className="text-3xl font-bold">Application reviews</h1>
     <p>Document completeness and consistency assist human review. Scores are not fraud probabilities.</p>
     <div className="flex flex-wrap gap-4">
@@ -85,7 +86,12 @@ export function ApplicationReview({ id, api, onReviewed }: Props & { id: string;
         <ul>{detail.assessment.findings.map(f => <li key={`${f.code}-${JSON.stringify(f.evidence)}`}><strong>{f.severity}: {f.code}</strong> — {f.description}
           <ul>{f.evidence.map((e, i) => <li key={i}>{e.document_type} · {e.document_id ?? 'Missing document'} · {e.field_name ?? 'Document'}</li>)}</ul></li>)}</ul></> : <p>No assessment yet.</p>}
       <h3 className="font-bold">Document evidence</h3>
-      <ul>{detail.documents.map(d => <li key={d.document_id}>{d.document_type} · {d.document_id} · {d.processing_status}</li>)}</ul>
+      <ul>{detail.documents.map(d => <li key={d.document_id}>{d.document_type} · {d.document_id} · {d.processing_status}
+        <dl>{Object.entries(d.fields ?? {}).map(([name, field]) => <div key={name} className="my-2 rounded border border-slate-700 p-3">
+          <dt className="font-semibold">{name.replaceAll('_', ' ')}</dt>
+          <dd>Extracted: {field.raw_value ?? 'Unreadable'} · Reviewed: {field.confirmed_value ?? 'Unverified'} · {field.review_status}</dd>
+        </div>)}</dl>
+      </li>)}</ul>
       {['submitted', 'resubmitted'].includes(detail.application.status) && <fieldset disabled={busy || stale} className="space-y-3">
         <legend>Human review decision</legend>
         <label>Review note (required for rejection or correction)<textarea maxLength={4000} value={note} onChange={e => setNote(e.target.value)} className="block w-full border p-2" /></label>

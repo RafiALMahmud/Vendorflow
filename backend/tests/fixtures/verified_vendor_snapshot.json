@@ -1,0 +1,33 @@
+{
+  "vendor_id": "10000000-0000-4000-8000-000000000001",
+  "company_name": "Example Trading Ltd",
+  "documents": [
+    {
+      "document_id": "20000000-0000-4000-8000-000000000001",
+      "document_type": "trade_license",
+      "processing_status": "processed",
+      "fields": {
+        "company_name": {
+          "raw_value": "Example Trading Ltd",
+          "confirmed_value": "Example Trading Ltd",
+          "review_status": "confirmed"
+        },
+        "registration_number": {
+          "raw_value": "REG-001",
+          "confirmed_value": "REG-001",
+          "review_status": "confirmed"
+        },
+        "expiry_date": {
+          "raw_value": "31/12/2026",
+          "confirmed_value": "2026-12-31",
+          "review_status": "corrected"
+        },
+        "tax_identifier": {
+          "raw_value": "OCR-GUESS-123",
+          "confirmed_value": null,
+          "review_status": "unreviewed"
+        }
+      }
+    }
+  ]
+}

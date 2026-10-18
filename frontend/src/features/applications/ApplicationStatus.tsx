@@ -21,7 +21,7 @@ export function ApplicationStatus({ application, onSubmit, onResubmit }: {
     <h2>Application status: {application.status.replaceAll('_', ' ')}</h2>
     {application.correction_note && <p>Reviewer note: {application.correction_note}</p>}
     {error && <p role="alert">{error}</p>}
-    {['draft', 'needs_correction'].includes(application.status) && <button disabled={pending} onClick={() => void send()}>
+    {['draft', 'needs_correction'].includes(application.status) && <button className="primary-button mt-4" disabled={pending} onClick={() => void send()}>
       {pending ? 'Submitting…' : application.status === 'draft' ? 'Submit application' : 'Resubmit application'}
     </button>}
   </section>;

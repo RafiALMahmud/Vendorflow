@@ -2,7 +2,8 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, expect, test, vi } from 'vitest';
 import type { Application, CaseDetail, ReviewApi } from '../applications/types';
 import { AdminDashboard, ApplicationReview } from './AdminDashboard';
-import { createReviewApi, ReviewApiError } from './reviewApi';
+import { reviewApiForToken } from './reviewApi';
+import { ApiError } from '../../shared/api';
 
 const application: Application = { id: 'fictional-id', company_name: 'Sample Ltd', status: 'submitted', version: 3, submitted_at: null };
 const detail: CaseDetail = {
@@ -41,7 +42,7 @@ test('shows empty results and forbidden errors without fabricated counts', async
   const view = render(<AdminDashboard api={client} />);
   expect(await screen.findByText('No applications match these filters.')).toBeInTheDocument();
   view.unmount();
-  vi.mocked(client.dashboard).mockRejectedValue(new ReviewApiError(403));
+  vi.mocked(client.dashboard).mockRejectedValue(new ApiError(403, 'Administrator access required.'));
   render(<AdminDashboard api={client} />);
   expect(await screen.findByRole('alert')).toHaveTextContent('Administrator access required');
   expect(screen.queryByText('awaiting review')).not.toBeInTheDocument();
@@ -63,7 +64,7 @@ test('reject/correct require note and a decision carries the loaded version', as
 
 test('conflict disables stale decisions until case is reloaded', async () => {
   const client = api();
-  vi.mocked(client.review).mockRejectedValue(new ReviewApiError(409));
+  vi.mocked(client.review).mockRejectedValue(new ApiError(409, 'This application changed. Reload it before reviewing.'));
   render(<ApplicationReview id={application.id} api={client} onReviewed={vi.fn()} />);
   fireEvent.click(await screen.findByRole('button', { name: 'Approve' }));
   expect(await screen.findByRole('alert')).toHaveTextContent('This application changed');
@@ -73,9 +74,10 @@ test('conflict disables stale decisions until case is reloaded', async () => {
 });
 
 test('review transport encodes ids and submits only decision, note, and version', async () => {
-  const transport = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify(detail)));
-  await createReviewApi(transport, '/api/v1').review('a/b', 'approved', 'Reviewed', 3);
-  expect(transport).toHaveBeenCalledWith('/api/v1/admin/applications/a%2Fb/review', expect.objectContaining({
+  const transport = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify(detail)));
+  await reviewApiForToken('fixture-token').review('a/b', 'approved', 'Reviewed', 3);
+  expect(transport).toHaveBeenCalledWith(expect.stringContaining('/api/v1/admin/applications/a%2Fb/review'), expect.objectContaining({
     method: 'PATCH', body: JSON.stringify({ decision: 'approved', note: 'Reviewed', expected_version: 3 }),
   }));
+  expect(new Headers(transport.mock.calls[0][1]?.headers).get('Authorization')).toBe('Bearer fixture-token');
 });

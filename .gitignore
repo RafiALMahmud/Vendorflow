@@ -6,6 +6,7 @@ __pycache__/
 .coverage
 htmlcov/
 backend/uploads/
+/private_uploads/
 
 frontend/node_modules/
 frontend/dist/
@@ -23,3 +24,6 @@ Thumbs.db
 /START_HERE.md
 /TEAM_TASKS.md
 
+
+# Isolated local PostgreSQL cluster and runtime data
+/.local/

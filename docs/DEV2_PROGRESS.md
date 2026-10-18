@@ -1,45 +1,41 @@
-# Developer 2 progress
+# Combined Developer 1 + Developer 2 integration
 
-This is an independently tested milestone on `feat/dev2-risk-review`, not a
-completed PostgreSQL-backed review product.
+Integrated Developer 1 commit 04b8cf4 into feat/dev2-risk-review, preserving its
+stacked history. Main is unchanged. The prior independent milestone is now wired
+into the shared identity, document contract, database and frontend routing.
 
-Implemented:
+Implemented and exercised:
 
-- D2-03: typed, configurable pure risk engine with stable codes, evidence,
-  deterministic ordering, verified-value semantics, score clamping and date checks.
-- D2-06 policy portion: legal transitions, owning-vendor/admin policy, required
-  decision reasons, bounded notes, UTC audit-event plan and strict review payload.
-- D2-05 UI portion: typed admin counts/queue, filtering/search/paging, evidence,
-  findings, human review controls, stale-decision protection and audit feed.
-- D2-02 UI portion: status/correction/submit/resubmit widget with pending/errors.
-- D2-08: GitHub Actions runs backend tests on Python 3.11/3.12 and frontend
-  tests/lint/build on Node 22. It requires neither DB, AWS nor OCR for this milestone.
-- Project configuration repair, reproducible live baseline smoke script, risk,
-  workflow, API and setup/handoff documentation.
+- Vendor registration/login/profile/upload/extraction/field confirmation from D1.
+- Own draft creation, submit/resubmit and status/correction UI at /applications.
+- Deterministic risk assessment of the shared verified snapshot; history and
+  submission evidence persist in PostgreSQL with rules version and assessed time.
+- Admin dashboard counts, searchable/paginated queue, evidence, findings, human
+  decisions, correction notes and audit history at /admin.
+- Server-side JWT roles, vendor ownership, row locks, expected review versions,
+  one active application/vendor constraint and atomic assessment/state/audit writes.
+- Sequential Alembic migration 0006_review on D1 revision 0005, without rewriting
+  earlier migrations. GitHub Actions now provides a disposable PostgreSQL 17 service.
 
-Feature UI uses injected APIs/callbacks and is exercised with fixtures exclusively
-in tests. It is intentionally not mounted into the shared health app until the
-authenticated transport and routes exist. There are no production fixture metrics.
+Validation on 2026-10-18:
 
-Validation: backend 82 tests passed, frontend 9 tests passed, ESLint passed,
-TypeScript/Vite production build passed, pip dependency check passed, live backend
-health/CORS and frontend production assets passed. Backend risk/workflow service
-statement coverage is 100%. GitHub-hosted CI results are not yet verified.
+- 172 backend tests passed, including PostgreSQL API lifecycle, authorization,
+  duplicate submissions, failed assessments, uniqueness and concurrent reviewers.
+- 24 frontend tests passed; workers limited to two to avoid resource timeouts on
+  the combined suite. ESLint and TypeScript/Vite build passed.
+- Fresh PostgreSQL migration through head, alembic check, review downgrade to
+  0005 and upgrade back to 0006 passed. pip check passed.
+- Live headless Edge browser: login -> draft -> submit -> admin correction ->
+  vendor resubmit -> admin approve. Vendor admin-page access denied. No browser
+  runtime errors. Desktop and mobile screenshots inspected.
 
-Blocked integration and next sequence:
+Local hosting: frontend http://localhost:5173, API http://localhost:8000,
+Swagger /docs. The isolated PostgreSQL cluster uses 127.0.0.1:55432; existing
+system PostgreSQL on 5432 is untouched. Generated demo account credentials are
+in ignored .local/LOCAL_ACCOUNTS.txt. Demo documents are explicitly fictional,
+and dashboard figures are real DB aggregates of these saved demo applications.
 
-1. Dev 1 merges User/Vendor/auth, shared snapshot contract/builder, authenticated
-   frontend client/context and base Alembic revisions.
-2. Rebase/merge updated main on this feature branch without rewriting others' work;
-   import the actual shared schema and identity dependencies.
-3. Add Application/RiskAssessment/AuditEvent on existing ORM Base and sequential
-   PostgreSQL migration; implement secure API queries and atomic assessment/audit
-   persistence with row locking/version checks and active-application uniqueness.
-4. Run PostgreSQL migration/rollback/concurrency and FastAPI authorization tests;
-   mount the UI through owner-reviewed shared entrypoint changes.
-5. Run vendor submit -> correction -> resubmit -> admin approve through actual
-   APIs/browser. Only then mark the full vertical slice complete.
-
-Local database setup additionally needs a working PostgreSQL login in ignored
-`.env`. No database or authentication settings were altered to bypass this.
-See REVIEW_WORKFLOW.md and API_CONTRACTS.md for the concrete integration proposal.
+Remaining limitations: teammate review before main merge; no production deployment;
+Tesseract not installed (native digital PDF extraction works, scans report processing
+failure); memory-only login means browser refresh signs out. These are separate
+from the now-working review integration.
